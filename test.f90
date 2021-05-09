@@ -41,20 +41,43 @@ program test
     file_ts     = "ice_data/ISMIP6/Atmosphere/Antarctica/AIS-32KM/NorESM_RCP85/Atm_anom_1950-1994.nc"
     file_smb    = "ice_data/ISMIP6/Atmosphere/Antarctica/AIS-32KM/NorESM_RCP85/Atm_anom_1950-1994.nc"
 
-    ! Define a variable without a time dimension
-    call varslice_init_arg(ts_ref,filename=file_ts_ref,name="ts", &
-        units_in="K",units_out="K",with_time=.FALSE.)
+    ! ======================================================================
+    ! Initialize variables
 
-    ! Define variables with a time dimension
-    call varslice_init_arg(ts,filename=file_ts,name="ts", &
-        units_in="K",units_out="K",with_time=.TRUE.,time_par=[1950.,1994.,1.])
+    if (.FALSE.) then 
 
-    call varslice_init_arg(smb,filename=file_smb,name="smb", &
-        units_in="kg m-2 s-1",units_out="m i.e. yr-1", &
-        scale=conv_smb,offset=0.0,with_time=.TRUE.,time_par=[1950.,1994.,1.])
+        ! Initialize variables using subroutine arguments 
 
+        ! Define a variable without a time dimension
+        call varslice_init_arg(ts_ref,filename=file_ts_ref,name="ts", &
+            units_in="K",units_out="K",with_time=.FALSE.)
+
+        ! Define variables with a time dimension
+        call varslice_init_arg(ts,filename=file_ts,name="ts", &
+            units_in="K",units_out="K",with_time=.TRUE.,time_par=[1950.,1994.,1.])
+
+        call varslice_init_arg(smb,filename=file_smb,name="smb", &
+            units_in="kg m-2 s-1",units_out="m i.e. yr-1", &
+            scale=conv_smb,offset=0.0,with_time=.TRUE.,time_par=[1950.,1994.,1.])
+
+    else 
+
+        ! Initialize variables using namelist file 
+
+        ! Define a variable without a time dimension
+        call varslice_init_nml(ts_ref,filename="test.nml",group="noresm_rcp85_ts_ref")
+
+        ! Define variables with a time dimension
+        call varslice_init_nml(ts, filename="test.nml",group="noresm_rcp85_ts")
+        call varslice_init_nml(smb,filename="test.nml",group="noresm_rcp85_smb")
+
+    end if 
+
+    ! ======================================================================
+    
     ! Write some info to the screen
     write(*,*) "info: " 
+    write(*,*) "conv_smb = ", conv_smb 
     write(*,*) size(ts_ref%var,1), size(ts_ref%var,2), size(ts_ref%var,3)
     write(*,*) size(ts%var,1),     size(ts%var,2),     size(ts%var,3)
     write(*,*) "time: ", ts%time 

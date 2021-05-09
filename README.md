@@ -6,14 +6,7 @@ This repository is intended to hold useful general functions related to running 
 
 1. Clone/download the repository.
 2. Modify the Makefile to match your system (mainly just the variables `FC=gfortran` to specify the compiler and `INC_NC`/`LIB_NC` to specify the location of your NetCDF installation). 
-3. In the file `test.f90`, change the following variables to match your file paths:
-
-  ```
-  file_ts_ref = PATH1
-  file_ts     = PATH2 
-  file_smb    = PATH3 
-  ```
-
+3. In the file `test.nml`, check that the file paths match your available datasets.
 4. Compile and run the test program: 
   
   ```

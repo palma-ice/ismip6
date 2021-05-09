@@ -159,7 +159,7 @@ contains
 
             ! Make sure crazy values have been set to missing (for safety)
             where (abs(vs%var) .ge. 1e10) vs%var = mv 
-            
+
             ! Apply scaling 
             where (vs%var .ne. mv) 
                 vs%var = vs%var*par%unit_scale + par%unit_offset
@@ -180,8 +180,8 @@ contains
         type(varslice_class), intent(INOUT) :: vs
         character(len=*),      intent(IN)   :: filename
         character(len=*),      intent(IN)   :: group
-        character(len=*),      intent(IN)   :: domain
-        character(len=*),      intent(IN)   :: grid_name  
+        character(len=*),      intent(IN), optional :: domain
+        character(len=*),      intent(IN), optional :: grid_name  
         
         ! Local variables 
         
@@ -324,8 +324,8 @@ contains
         type(varslice_param_class), intent(OUT) :: par 
         character(len=*), intent(IN) :: filename
         character(len=*), intent(IN) :: group
-        character(len=*), intent(IN) :: domain
-        character(len=*), intent(IN) :: grid_name  
+        character(len=*), intent(IN), optional :: domain
+        character(len=*), intent(IN), optional :: grid_name  
         logical, optional :: init 
 
         ! Local variables
@@ -345,8 +345,10 @@ contains
         call nml_read(filename,group,"time_par",       par%time_par,     init=init_pars)   
         
         ! Parse filename as needed
-        call parse_path(par%filename,domain,grid_name)
-        
+        if (present(domain) .and. present(grid_name)) then
+            call parse_path(par%filename,domain,grid_name)
+        end if 
+
         ! Make sure time parameters are consistent time_par=[x0,x1,dx]
         if (par%time_par(3) .eq. 0) par%time_par(2) = par%time_par(1) 
 
