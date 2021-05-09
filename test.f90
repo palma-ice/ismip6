@@ -20,6 +20,8 @@ program test
     ! Define seconds in a year
     real(wp), parameter :: sec_year = 31536000.0     ! [s/yr]  365*24*3600
 
+    type(ismip6_forcing_class) :: ismip6 
+
     type(varslice_class)   :: ts_ref 
     type(varslice_class)   :: ts 
     type(varslice_class)   :: smb 
@@ -76,6 +78,9 @@ program test
 
     end if 
 
+    ! Initialize variables inside of ismip6 object 
+    call ismip6_forcing_init(ismip6,"test.nml","noresm_rcp85")
+
     ! ======================================================================
     
     ! Write some info to the screen
@@ -103,16 +108,32 @@ program test
         ! Get current time 
         time = time_init + (n-1)*dt
 
-        ! Load variables for current time 
-        call varslice_update(ts,time)
-        call varslice_update(smb,time)
-        call varslice_update(tf,time)
+        if (.FALSE.) then
+            ! Use local varslice variables 
 
-        ! Check data
-        call print_var_range(ts%var, "ts", mv,time) 
-        call print_var_range(smb%var,"smb",mv,time) 
-        call print_var_range(tf%var, "tf", mv,time) 
-        write(*,*) 
+            ! Load variables for current time 
+            call varslice_update(ts,time)
+            call varslice_update(smb,time)
+            call varslice_update(tf,time)
+
+            ! Check data
+            call print_var_range(ts%var, "ts", mv,time) 
+            call print_var_range(smb%var,"smb",mv,time) 
+            call print_var_range(tf%var, "tf", mv,time) 
+            write(*,*) 
+
+        else 
+            ! Use ismip6 object variables 
+
+            call ismip6_forcing_update(ismip6,time)
+
+            ! Check data
+            call print_var_range(ismip6%ts%var, "ts", mv,time) 
+            call print_var_range(ismip6%smb%var,"smb",mv,time) 
+            call print_var_range(ismip6%tf%var, "tf", mv,time) 
+            write(*,*) 
+
+        end if 
 
     end do
 
