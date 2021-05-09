@@ -1,3 +1,4 @@
 *.x
 .DS_Store
 ice_data
+.obj
