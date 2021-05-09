@@ -73,12 +73,12 @@ contains
         ! Initialize all variables from namelist entries 
 
         ! Amospheric fields
-        call varslice_init_nml(ism%ts_ref,filename,group=trim(group_prefix)//"ts_ref")
-        call varslice_init_nml(ism%ts, filename,group=trim(group_prefix)//"ts")
-        call varslice_init_nml(ism%smb,filename,group=trim(group_prefix)//"smb")
+        call varslice_init_nml(ism%ts_ref, filename,group=trim(group_prefix)//"ts_ref")
+        call varslice_init_nml(ism%ts,     filename,group=trim(group_prefix)//"ts")
+        call varslice_init_nml(ism%smb,    filename,group=trim(group_prefix)//"smb")
 
         ! Oceanic fields
-        call varslice_init_nml(ism%tf,filename,group=trim(group_prefix)//"tf")
+        call varslice_init_nml(ism%tf,     filename,group=trim(group_prefix)//"tf")
 
         return 
 
@@ -105,7 +105,7 @@ contains
         ! Apply additional calculations 
 
         ! [To do, as needed] 
-        
+
         return 
 
     end subroutine ismip6_forcing_update
