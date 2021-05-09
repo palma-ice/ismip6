@@ -6,8 +6,7 @@ This repository is intended to hold useful general functions related to running 
 
 1. Clone/download the repository.
 2. Modify the Makefile to match your system (mainly just the variables `FC=gfortran` to specify the compiler and `INC_NC`/`LIB_NC` to specify the location of your NetCDF installation). 
-3. Compile the test program: `make test`. 
-4. In the file `test.f90`, change the following variables to match your file paths:
+3. In the file `test.f90`, change the following variables to match your file paths:
 
   ```
   file_ts_ref = PATH1
@@ -15,7 +14,12 @@ This repository is intended to hold useful general functions related to running 
   file_smb    = PATH3 
   ```
 
-5. Run the test program: `./test.x`. 
+4. Compile and run the test program: 
+  
+  ```
+  make test
+  ./test.x 
+  ``` 
 
 That's it. You should see some output to the screen indicating that the program is able to load some data.
 
