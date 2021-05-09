@@ -157,6 +157,9 @@ contains
 
             end select
 
+            ! Make sure crazy values have been set to missing (for safety)
+            where (abs(vs%var) .ge. 1e10) vs%var = mv 
+            
             ! Apply scaling 
             where (vs%var .ne. mv) 
                 vs%var = vs%var*par%unit_scale + par%unit_offset
@@ -221,7 +224,7 @@ contains
         if (present(scale)) vs%par%unit_scale = scale 
 
         vs%par%unit_offset = 0.0_wp 
-        if (present(offset)) vs%par%unit_offset = scale 
+        if (present(offset)) vs%par%unit_offset = offset 
         
         vs%par%with_time = .TRUE. 
         if (present(with_time)) vs%par%with_time = with_time 
