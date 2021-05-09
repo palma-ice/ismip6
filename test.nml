@@ -30,3 +30,14 @@
     with_time   = True 
     time_par    = 1950, 1994, 1
 /
+
+&noresm_rcp85_tf
+    filename    = "ice_data/ISMIP6/Ocean/Antarctica/AIS-32KM/NorESM_RCP85/Thermal_forcing_1850-1994.nc"
+    name        = "tf"
+    units_in    = "K"
+    units_out   = "K"
+    unit_scale  = 1.0 
+    unit_offset = 0.0 
+    with_time   = True 
+    time_par    = 1850, 1994, 1
+/

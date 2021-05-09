@@ -23,7 +23,8 @@ program test
     type(varslice_class)   :: ts_ref 
     type(varslice_class)   :: ts 
     type(varslice_class)   :: smb 
-    
+    type(varslice_class)   :: tf 
+
     character(len=1024)    :: file_ts_ref 
     character(len=1024)    :: file_ts
     character(len=1024)    :: file_smb 
@@ -71,6 +72,8 @@ program test
         call varslice_init_nml(ts, filename="test.nml",group="noresm_rcp85_ts")
         call varslice_init_nml(smb,filename="test.nml",group="noresm_rcp85_smb")
 
+        call varslice_init_nml(tf,filename="test.nml",group="noresm_rcp85_tf")
+
     end if 
 
     ! ======================================================================
@@ -103,16 +106,41 @@ program test
         ! Load variables for current time 
         call varslice_update(ts,time)
         call varslice_update(smb,time)
+        call varslice_update(tf,time)
 
-        ! Check data 
-        write(*,*) ts%time(n)," ts:  ", minval(ts%var,mask=ts%var.ne.mv), &
-                                        maxval(ts%var,mask=ts%var.ne.mv)
-        write(*,*) ts%time(n)," smb: ", minval(smb%var,mask=smb%var.ne.mv), &
-                                        maxval(smb%var,mask=smb%var.ne.mv)
+        ! Check data
+        call print_var_range(ts%var, "ts", mv,time) 
+        call print_var_range(smb%var,"smb",mv,time) 
+        call print_var_range(tf%var, "tf", mv,time) 
+        write(*,*) 
 
     end do
 
     stop "Done testing ismip6 forcing."
+
+contains
+
+    subroutine print_var_range(var,name,mv,time)
+
+        implicit none 
+
+        real(wp),         intent(IN) :: var(:,:,:) 
+        character(len=*), intent(IN) :: name
+        real(wp),         intent(IN) :: mv 
+        real(wp), intent(IN), optional :: time 
+
+        if (present(time)) then 
+            write(*,"(f10.1,2x,2a,2f14.3)") time, trim(name), ": ", &
+                minval(var,mask=var.ne.mv), maxval(var,mask=var.ne.mv)
+        else 
+            write(*,"(10x,2x,2a,2f14.3)") trim(name), ": ", &
+                minval(var,mask=var.ne.mv), maxval(var,mask=var.ne.mv)
+        end if 
+
+        return 
+
+    end subroutine print_var_range
+
 
 end program test
 
