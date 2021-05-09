@@ -128,8 +128,12 @@ program test
             call ismip6_forcing_update(ismip6,time)
 
             ! Check data
+            write(*,*) "================"
             call print_var_range(ismip6%ts%var, "ts", mv,time) 
             call print_var_range(ismip6%smb%var,"smb",mv,time) 
+            write(*,*) "----"
+            call print_var_range(ismip6%to%var, "to", mv,time) 
+            call print_var_range(ismip6%so%var, "so", mv,time) 
             call print_var_range(ismip6%tf%var, "tf", mv,time) 
             write(*,*) 
 

@@ -25,6 +25,8 @@ module ismip6
         type(varslice_class)   :: smb
 
         ! Oceanic fields 
+        type(varslice_class)   :: to
+        type(varslice_class)   :: so
         type(varslice_class)   :: tf 
 
     end type
@@ -78,6 +80,8 @@ contains
         call varslice_init_nml(ism%smb,    filename,group=trim(group_prefix)//"smb")
 
         ! Oceanic fields
+        call varslice_init_nml(ism%to,     filename,group=trim(group_prefix)//"to")
+        call varslice_init_nml(ism%so,     filename,group=trim(group_prefix)//"so")
         call varslice_init_nml(ism%tf,     filename,group=trim(group_prefix)//"tf")
 
         return 
@@ -99,6 +103,8 @@ contains
         call varslice_update(ism%smb,time)
 
         ! Oceanic fields 
+        call varslice_update(ism%to,time)
+        call varslice_update(ism%so,time)
         call varslice_update(ism%tf,time)
 
 
