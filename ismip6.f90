@@ -32,6 +32,9 @@ module ismip6
 
         ! Resources: 
 
+        ! General fields 
+        type(varslice_class)   :: basins
+
         ! Atmospheric fields
         type(varslice_class)   :: ts_ref 
         type(varslice_class)   :: smb_ref
@@ -47,6 +50,8 @@ module ismip6
         type(varslice_class)   :: to_ref
         type(varslice_class)   :: so_ref
         type(varslice_class)   :: tf_ref
+        type(varslice_class)   :: dt_l_ref
+        type(varslice_class)   :: dt_nl_ref
 
         type(varslice_class)   :: to_hist
         type(varslice_class)   :: so_hist
@@ -101,9 +106,12 @@ contains
 
         ! Initialize all variables from namelist entries 
 
+        ! General fields 
+        call varslice_init_nml(ism%basins,   filename,group="imbie_basins")
+        
         ! Amospheric fields
         call varslice_init_nml(ism%ts_ref,   filename,group=trim(group_prefix)//"ts_ref")
-        call varslice_init_nml(ism%ts_ref,   filename,group=trim(group_prefix)//"smb_ref")
+        call varslice_init_nml(ism%smb_ref,  filename,group=trim(group_prefix)//"smb_ref")
         
         call varslice_init_nml(ism%ts_hist,  filename,group=trim(group_prefix)//"ts_hist")
         call varslice_init_nml(ism%smb_hist, filename,group=trim(group_prefix)//"smb_hist")
@@ -112,10 +120,12 @@ contains
         call varslice_init_nml(ism%smb_proj, filename,group=trim(group_prefix)//"smb_proj")
 
         ! Oceanic fields
-        ! call varslice_init_nml(ism%to_ref,   filename,group=trim(group_prefix)//"to_ref")
-        ! call varslice_init_nml(ism%so_ref,   filename,group=trim(group_prefix)//"so_ref")
-        ! call varslice_init_nml(ism%tf_ref,   filename,group=trim(group_prefix)//"tf_ref")
-
+        call varslice_init_nml(ism%to_ref,   filename,group="to_ref")
+        call varslice_init_nml(ism%so_ref,   filename,group="so_ref")
+        call varslice_init_nml(ism%tf_ref,   filename,group="tf_ref")
+        call varslice_init_nml(ism%dt_l_ref, filename,group="dt_l_ref")
+        call varslice_init_nml(ism%dt_nl_ref,filename,group="dt_nl_ref")
+        
         call varslice_init_nml(ism%to_hist,  filename,group=trim(group_prefix)//"to_hist")
         call varslice_init_nml(ism%so_hist,  filename,group=trim(group_prefix)//"so_hist")
         call varslice_init_nml(ism%tf_hist,  filename,group=trim(group_prefix)//"tf_hist")
@@ -123,6 +133,20 @@ contains
         call varslice_init_nml(ism%to_proj,  filename,group=trim(group_prefix)//"to_proj")
         call varslice_init_nml(ism%so_proj,  filename,group=trim(group_prefix)//"so_proj")
         call varslice_init_nml(ism%tf_proj,  filename,group=trim(group_prefix)//"tf_proj")
+
+
+        ! Load time-independent fields
+
+        ! Amospheric fields 
+        call varslice_update(ism%ts_ref)
+        call varslice_update(ism%smb_ref)
+
+        ! Oceanic fields
+        call varslice_update(ism%to_ref)
+        call varslice_update(ism%so_ref)
+        call varslice_update(ism%tf_ref)
+        call varslice_update(ism%dt_l_ref)
+        call varslice_update(ism%dt_nl_ref)
 
         return 
 

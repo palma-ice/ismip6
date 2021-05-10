@@ -176,22 +176,22 @@ contains
 
     end subroutine varslice_update
 
-    subroutine varslice_init_nml(vs,filename,group,domain,grid_name)
+    subroutine varslice_init_nml(vs,filename,group,domain,grid_name,verbose)
         ! Routine to load information related to a given 
         ! transient variable, so that it can be processed properly.
 
         implicit none 
 
-        type(varslice_class), intent(INOUT) :: vs
-        character(len=*),      intent(IN)   :: filename
-        character(len=*),      intent(IN)   :: group
-        character(len=*),      intent(IN), optional :: domain
-        character(len=*),      intent(IN), optional :: grid_name  
-        
+        type(varslice_class),   intent(INOUT) :: vs
+        character(len=*),       intent(IN)    :: filename
+        character(len=*),       intent(IN)    :: group
+        character(len=*),       intent(IN), optional :: domain
+        character(len=*),       intent(IN), optional :: grid_name  
+        logical,                intent(IN), optional :: verbose 
         ! Local variables 
         
         ! First load parameters from nml file 
-        call varslice_par_load(vs%par,filename,group,domain,grid_name)
+        call varslice_par_load(vs%par,filename,group,domain,grid_name,verbose)
 
         ! Perform remaining init operations 
         call varslice_init_data(vs) 
@@ -423,7 +423,7 @@ contains
 
     end subroutine varslice_end
 
-    subroutine varslice_par_load(par,filename,group,domain,grid_name,init)
+    subroutine varslice_par_load(par,filename,group,domain,grid_name,init,verbose)
 
         type(varslice_param_class), intent(OUT) :: par 
         character(len=*), intent(IN) :: filename
@@ -431,13 +431,18 @@ contains
         character(len=*), intent(IN), optional :: domain
         character(len=*), intent(IN), optional :: grid_name  
         logical, optional :: init 
+        logical, optional :: verbose 
 
         ! Local variables
         logical  :: init_pars 
         real(wp) :: time_par(3) 
+        logical  :: print_summary 
 
         init_pars = .FALSE.
         if (present(init)) init_pars = .TRUE. 
+
+        print_summary = .TRUE. 
+        if (present(verbose)) print_summary = verbose 
 
         call nml_read(filename,group,"filename",       par%filename,     init=init_pars)
         call nml_read(filename,group,"name",           par%name,         init=init_pars)
@@ -457,12 +462,20 @@ contains
         if (par%time_par(3) .eq. 0) par%time_par(2) = par%time_par(1) 
 
         ! Summary 
-        if (.TRUE.) then 
-        write(*,*) "=== ", trim(filename), ":: ", trim(group)
-        write(*,*) "filename = ", trim(par%filename)
-        write(*,*) "name =     ", trim(par%name)
+        if (print_summary) then  
+            write(*,*) "Loading: ", trim(filename), ":: ", trim(group)
+            write(*,*) "filename    = ", trim(par%filename)
+            write(*,*) "name        = ", trim(par%name)
+            write(*,*) "units_in    = ", trim(par%units_in)
+            write(*,*) "units_out   = ", trim(par%units_out)
+            write(*,*) "unit_scale  = ", par%unit_scale
+            write(*,*) "unit_offset = ", par%unit_offset
+            write(*,*) "with_time   = ", par%with_time
+            if (par%with_time) then
+                write(*,*) "time_par    = ", par%time_par
+            end if
         end if 
-        
+
         return
 
     end subroutine varslice_par_load
