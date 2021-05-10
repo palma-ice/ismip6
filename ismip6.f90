@@ -78,13 +78,15 @@ module ismip6
 contains
     
 
-    subroutine ismip6_forcing_init(ism,filename,experiment)
+    subroutine ismip6_forcing_init(ism,filename,experiment,domain,grid_name)
 
         implicit none 
 
         type(ismip6_forcing_class), intent(INOUT) :: ism
         character(len=*), intent(IN) :: filename
         character(len=*), intent(IN) :: experiment 
+        character(len=*), intent(IN), optional :: domain 
+        character(len=*), intent(IN), optional :: grid_name 
 
         ! Local variables 
         character(len=256) :: group_prefix 
@@ -107,34 +109,33 @@ contains
         ! Initialize all variables from namelist entries 
 
         ! General fields 
-        call varslice_init_nml(ism%basins,   filename,group="imbie_basins")
+        call varslice_init_nml(ism%basins,   filename,group="imbie_basins",domain=domain,grid_name=grid_name)
         
         ! Amospheric fields
-        call varslice_init_nml(ism%ts_ref,   filename,group=trim(group_prefix)//"ts_ref")
-        call varslice_init_nml(ism%smb_ref,  filename,group=trim(group_prefix)//"smb_ref")
+        call varslice_init_nml(ism%ts_ref,   filename,group=trim(group_prefix)//"ts_ref",domain=domain,grid_name=grid_name)
+        call varslice_init_nml(ism%smb_ref,  filename,group=trim(group_prefix)//"smb_ref",domain=domain,grid_name=grid_name)
         
-        call varslice_init_nml(ism%ts_hist,  filename,group=trim(group_prefix)//"ts_hist")
-        call varslice_init_nml(ism%smb_hist, filename,group=trim(group_prefix)//"smb_hist")
+        call varslice_init_nml(ism%ts_hist,  filename,group=trim(group_prefix)//"ts_hist",domain=domain,grid_name=grid_name)
+        call varslice_init_nml(ism%smb_hist, filename,group=trim(group_prefix)//"smb_hist",domain=domain,grid_name=grid_name)
 
-        call varslice_init_nml(ism%ts_proj,  filename,group=trim(group_prefix)//"ts_proj")
-        call varslice_init_nml(ism%smb_proj, filename,group=trim(group_prefix)//"smb_proj")
+        call varslice_init_nml(ism%ts_proj,  filename,group=trim(group_prefix)//"ts_proj",domain=domain,grid_name=grid_name)
+        call varslice_init_nml(ism%smb_proj, filename,group=trim(group_prefix)//"smb_proj",domain=domain,grid_name=grid_name)
 
         ! Oceanic fields
-        call varslice_init_nml(ism%to_ref,   filename,group="to_ref")
-        call varslice_init_nml(ism%so_ref,   filename,group="so_ref")
-        call varslice_init_nml(ism%tf_ref,   filename,group="tf_ref")
-        call varslice_init_nml(ism%dt_l_ref, filename,group="dt_l_ref")
-        call varslice_init_nml(ism%dt_nl_ref,filename,group="dt_nl_ref")
+        call varslice_init_nml(ism%to_ref,   filename,group="to_ref",domain=domain,grid_name=grid_name)
+        call varslice_init_nml(ism%so_ref,   filename,group="so_ref",domain=domain,grid_name=grid_name)
+        call varslice_init_nml(ism%tf_ref,   filename,group="tf_ref",domain=domain,grid_name=grid_name)
+        call varslice_init_nml(ism%dt_l_ref, filename,group="dt_l_ref",domain=domain,grid_name=grid_name)
+        call varslice_init_nml(ism%dt_nl_ref,filename,group="dt_nl_ref",domain=domain,grid_name=grid_name)
         
-        call varslice_init_nml(ism%to_hist,  filename,group=trim(group_prefix)//"to_hist")
-        call varslice_init_nml(ism%so_hist,  filename,group=trim(group_prefix)//"so_hist")
-        call varslice_init_nml(ism%tf_hist,  filename,group=trim(group_prefix)//"tf_hist")
+        call varslice_init_nml(ism%to_hist,  filename,group=trim(group_prefix)//"to_hist",domain=domain,grid_name=grid_name)
+        call varslice_init_nml(ism%so_hist,  filename,group=trim(group_prefix)//"so_hist",domain=domain,grid_name=grid_name)
+        call varslice_init_nml(ism%tf_hist,  filename,group=trim(group_prefix)//"tf_hist",domain=domain,grid_name=grid_name)
 
-        call varslice_init_nml(ism%to_proj,  filename,group=trim(group_prefix)//"to_proj")
-        call varslice_init_nml(ism%so_proj,  filename,group=trim(group_prefix)//"so_proj")
-        call varslice_init_nml(ism%tf_proj,  filename,group=trim(group_prefix)//"tf_proj")
-
-
+        call varslice_init_nml(ism%to_proj,  filename,group=trim(group_prefix)//"to_proj",domain=domain,grid_name=grid_name)
+        call varslice_init_nml(ism%so_proj,  filename,group=trim(group_prefix)//"so_proj",domain=domain,grid_name=grid_name)
+        call varslice_init_nml(ism%tf_proj,  filename,group=trim(group_prefix)//"tf_proj",domain=domain,grid_name=grid_name)
+        
         ! Load time-independent fields
 
         ! Amospheric fields 
