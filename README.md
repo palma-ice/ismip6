@@ -16,3 +16,13 @@ This repository is intended to hold useful general functions related to running 
 
 That's it. You should see some output to the screen indicating that the program is able to load some data.
 
+## To do
+
+- Add different methods of getting slices:
+  
+  ```
+  slice_method = [exact, interp, range, range_mean, range_sd, range_sum]
+  range_rep    = 12 ! For monthly data output 
+  ```
+  
+- Add additional fields (retreat masks, etc) to ISMIP6 object.
