@@ -29,7 +29,7 @@ program test
 
 
     ! Initialize variables inside of ismip6 object 
-    call ismip6_forcing_init(ismip6,"test.nml","noresm_rcp85", &
+    call ismip6_forcing_init(ismip6,"ismip6.nml","noresm_rcp85", &
                             domain="Antarctica",grid_name="ANT-32KM")
 
 
