@@ -19,16 +19,43 @@ module ismip6
     ! Class for holding ice-forcing data from ISMIP6 archives
     type ismip6_forcing_class
         
+        ! Current state:
+
         ! Atmospheric fields
-        type(varslice_class)   :: ts_ref 
-        type(varslice_class)   :: ts 
+        type(varslice_class)   :: ts
         type(varslice_class)   :: smb
 
         ! Oceanic fields 
         type(varslice_class)   :: to
         type(varslice_class)   :: so
-        type(varslice_class)   :: tf 
+        type(varslice_class)   :: tf
 
+        ! Resources: 
+
+        ! Atmospheric fields
+        type(varslice_class)   :: ts_ref 
+        type(varslice_class)   :: smb_ref
+
+        type(varslice_class)   :: ts_hist 
+        type(varslice_class)   :: smb_hist
+
+        type(varslice_class)   :: ts_proj
+        type(varslice_class)   :: smb_proj
+
+
+        ! Oceanic fields 
+        type(varslice_class)   :: to_ref
+        type(varslice_class)   :: so_ref
+        type(varslice_class)   :: tf_ref
+
+        type(varslice_class)   :: to_hist
+        type(varslice_class)   :: so_hist
+        type(varslice_class)   :: tf_hist
+
+        type(varslice_class)   :: to_proj
+        type(varslice_class)   :: so_proj
+        type(varslice_class)   :: tf_proj
+        
     end type
 
     ! Class for holding ice output for writing to standard formats...
@@ -75,14 +102,27 @@ contains
         ! Initialize all variables from namelist entries 
 
         ! Amospheric fields
-        call varslice_init_nml(ism%ts_ref, filename,group=trim(group_prefix)//"ts_ref")
-        call varslice_init_nml(ism%ts,     filename,group=trim(group_prefix)//"ts")
-        call varslice_init_nml(ism%smb,    filename,group=trim(group_prefix)//"smb")
+        call varslice_init_nml(ism%ts_ref,   filename,group=trim(group_prefix)//"ts_ref")
+        call varslice_init_nml(ism%ts_ref,   filename,group=trim(group_prefix)//"smb_ref")
+        
+        call varslice_init_nml(ism%ts_hist,  filename,group=trim(group_prefix)//"ts_hist")
+        call varslice_init_nml(ism%smb_hist, filename,group=trim(group_prefix)//"smb_hist")
+
+        call varslice_init_nml(ism%ts_proj,  filename,group=trim(group_prefix)//"ts_proj")
+        call varslice_init_nml(ism%smb_proj, filename,group=trim(group_prefix)//"smb_proj")
 
         ! Oceanic fields
-        call varslice_init_nml(ism%to,     filename,group=trim(group_prefix)//"to")
-        call varslice_init_nml(ism%so,     filename,group=trim(group_prefix)//"so")
-        call varslice_init_nml(ism%tf,     filename,group=trim(group_prefix)//"tf")
+        ! call varslice_init_nml(ism%to_ref,   filename,group=trim(group_prefix)//"to_ref")
+        ! call varslice_init_nml(ism%so_ref,   filename,group=trim(group_prefix)//"so_ref")
+        ! call varslice_init_nml(ism%tf_ref,   filename,group=trim(group_prefix)//"tf_ref")
+
+        call varslice_init_nml(ism%to_hist,  filename,group=trim(group_prefix)//"to_hist")
+        call varslice_init_nml(ism%so_hist,  filename,group=trim(group_prefix)//"so_hist")
+        call varslice_init_nml(ism%tf_hist,  filename,group=trim(group_prefix)//"tf_hist")
+
+        call varslice_init_nml(ism%to_proj,  filename,group=trim(group_prefix)//"to_proj")
+        call varslice_init_nml(ism%so_proj,  filename,group=trim(group_prefix)//"so_proj")
+        call varslice_init_nml(ism%tf_proj,  filename,group=trim(group_prefix)//"tf_proj")
 
         return 
 
@@ -98,15 +138,91 @@ contains
 
         ! Get slices for current time
 
-        ! Atmospheric fields
-        call varslice_update(ism%ts,time)
-        call varslice_update(ism%smb,time)
+        ! === Atmospheric fields ==================================
+        
+        if (time .lt. 1950) then 
 
-        ! Oceanic fields 
-        call varslice_update(ism%to,time)
-        call varslice_update(ism%so,time)
-        call varslice_update(ism%tf,time)
+            call varslice_update(ism%ts_hist,1950.0_wp)
+            call varslice_update(ism%smb_hist,1950.0_wp)
 
+            ism%ts  = ism%ts_hist 
+            ism%smb = ism%smb_hist 
+            
+        else if (time .ge. 1950 .and. time .le. 1994) then 
+
+            call varslice_update(ism%ts_hist,time)
+            call varslice_update(ism%smb_hist,time)
+
+            ism%ts  = ism%ts_hist 
+            ism%smb = ism%smb_hist 
+            
+        else if (time .ge. 1995 .and. time .le. 2100) then 
+
+            call varslice_update(ism%ts_proj,time)
+            call varslice_update(ism%smb_proj,time)
+
+            ism%ts  = ism%ts_proj
+            ism%smb = ism%smb_proj
+            
+        else ! time .gt. 2100
+
+            call varslice_update(ism%ts_proj,2100.0_wp)
+            call varslice_update(ism%smb_proj,2100.0_wp)
+
+            ism%ts  = ism%ts_proj
+            ism%smb = ism%smb_proj
+            
+        end if
+
+        ! === Oceanic fields ==================================
+
+        if (time .lt. 1850) then 
+
+            ! Oceanic fields 
+            call varslice_update(ism%to_hist,1850.0_wp)
+            call varslice_update(ism%so_hist,1850.0_wp)
+            call varslice_update(ism%tf_hist,1850.0_wp)
+
+            ism%to = ism%to_hist
+            ism%so = ism%so_hist
+            ism%tf = ism%tf_hist
+            
+        else if (time .ge. 1850 .and. time .le. 1994) then 
+
+            ! Oceanic fields 
+            call varslice_update(ism%to_hist,time)
+            call varslice_update(ism%so_hist,time)
+            call varslice_update(ism%tf_hist,time)
+
+            ism%to = ism%to_hist
+            ism%so = ism%so_hist
+            ism%tf = ism%tf_hist
+            
+        else if (time .ge. 1995 .and. time .le. 2100) then 
+
+            ! Oceanic fields 
+            call varslice_update(ism%to_proj,time)
+            call varslice_update(ism%so_proj,time)
+            call varslice_update(ism%tf_proj,time)
+
+            ism%to = ism%to_proj
+            ism%so = ism%so_proj
+            ism%tf = ism%tf_proj
+            
+        else ! time .gt. 2100
+
+            ! Oceanic fields 
+            call varslice_update(ism%to_proj,2100.0_wp)
+            call varslice_update(ism%so_proj,2100.0_wp)
+            call varslice_update(ism%tf_proj,2100.0_wp)
+
+            ism%to = ism%to_proj
+            ism%so = ism%so_proj
+            ism%tf = ism%tf_proj
+            
+        end if
+
+            
 
         ! Apply additional calculations 
 
@@ -115,7 +231,5 @@ contains
         return 
 
     end subroutine ismip6_forcing_update
-
-
 
 end module ismip6

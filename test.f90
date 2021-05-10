@@ -32,13 +32,13 @@ program test
     call ismip6_forcing_init(ismip6,"test.nml","noresm_rcp85")
 
 
-    
+
     ! ======================================================================
     
     ! Perform timestepping
-    time_init = 1950.0 
-    time_end  = 1994.0 
-    dt        = 1.0 
+    time_init = 1840.0 
+    time_end  = 2110.0 
+    dt        = 10.0 
 
     do n = 1, ceiling((time_end-time_init)/dt)+1
 
@@ -75,10 +75,10 @@ contains
         real(wp), intent(IN), optional :: time 
 
         if (present(time)) then 
-            write(*,"(f10.1,2x,2a,2f14.3)") time, trim(name), ": ", &
+            write(*,"(f10.1,2x,a10,a3,2f14.3)") time, trim(name), ": ", &
                 minval(var,mask=var.ne.mv), maxval(var,mask=var.ne.mv)
         else 
-            write(*,"(10x,2x,2a,2f14.3)") trim(name), ": ", &
+            write(*,"(10x,2x,a10,a3,2f14.3)") trim(name), ": ", &
                 minval(var,mask=var.ne.mv), maxval(var,mask=var.ne.mv)
         end if 
 

@@ -9,7 +9,18 @@
     time_par    = 1995, 1995, 0
 /
 
-&noresm_rcp85_ts
+&noresm_rcp85_smb_ref
+    filename    = "ice_data/ISMIP6/Atmosphere/Antarctica/AIS-32KM/NorESM_RCP85/Atm_clim_1995-2014.nc"
+    name        = "smb"
+    units_in    = "kg m-2 s-1"
+    units_out   = "m i.e. yr-1"
+    unit_scale  = 34654.9492 
+    unit_offset = 0.0 
+    with_time   = FALSE 
+    time_par    = 1995, 1995, 0
+/
+
+&noresm_rcp85_ts_hist
     filename    = "ice_data/ISMIP6/Atmosphere/Antarctica/AIS-32KM/NorESM_RCP85/Atm_anom_1950-1994.nc"
     name        = "ts"
     units_in    = "K"
@@ -20,7 +31,7 @@
     time_par    = 1950, 1994, 1
 /
 
-&noresm_rcp85_smb
+&noresm_rcp85_smb_hist
     filename    = "ice_data/ISMIP6/Atmosphere/Antarctica/AIS-32KM/NorESM_RCP85/Atm_anom_1950-1994.nc"
     name        = "smb"
     units_in    = "kg m-2 s-1"
@@ -31,7 +42,29 @@
     time_par    = 1950, 1994, 1
 /
 
-&noresm_rcp85_to
+&noresm_rcp85_ts_proj
+    filename    = "ice_data/ISMIP6/Atmosphere/Antarctica/AIS-32KM/NorESM_RCP85/Atm_anom_1995-2100.nc"
+    name        = "ts"
+    units_in    = "K"
+    units_out   = "K"
+    unit_scale  = 1.0 
+    unit_offset = 0.0 
+    with_time   = True 
+    time_par    = 1995, 2100, 1
+/
+
+&noresm_rcp85_smb_proj
+    filename    = "ice_data/ISMIP6/Atmosphere/Antarctica/AIS-32KM/NorESM_RCP85/Atm_anom_1995-2100.nc"
+    name        = "smb"
+    units_in    = "kg m-2 s-1"
+    units_out   = "m i.e. yr-1"
+    unit_scale  = 34654.9492
+    unit_offset = 0.0 
+    with_time   = True 
+    time_par    = 1995, 2100, 1
+/
+
+&noresm_rcp85_to_hist
     filename    = "ice_data/ISMIP6/Ocean/Antarctica/AIS-32KM/NorESM_RCP85/Ocean_1850-1994.nc"
     name        = "to"
     units_in    = "degrees C"
@@ -42,7 +75,7 @@
     time_par    = 1850, 1994, 1
 /
 
-&noresm_rcp85_so
+&noresm_rcp85_so_hist
     filename    = "ice_data/ISMIP6/Ocean/Antarctica/AIS-32KM/NorESM_RCP85/Ocean_1850-1994.nc"
     name        = "so"
     units_in    = "PSU"
@@ -52,7 +85,8 @@
     with_time   = True 
     time_par    = 1850, 1994, 1
 /
-&noresm_rcp85_tf
+
+&noresm_rcp85_tf_hist
     filename    = "ice_data/ISMIP6/Ocean/Antarctica/AIS-32KM/NorESM_RCP85/Thermal_forcing_1850-1994.nc"
     name        = "tf"
     units_in    = "K"
@@ -61,4 +95,36 @@
     unit_offset = 0.0 
     with_time   = True 
     time_par    = 1850, 1994, 1
+/
+
+&noresm_rcp85_to_proj
+    filename    = "ice_data/ISMIP6/Ocean/Antarctica/AIS-32KM/NorESM_RCP85/Ocean_1995-2100.nc"
+    name        = "to"
+    units_in    = "degrees C"
+    units_out   = "K"
+    unit_scale  = 1.0 
+    unit_offset = 273.15 
+    with_time   = True 
+    time_par    = 1995, 2100, 1
+/
+
+&noresm_rcp85_so_proj
+    filename    = "ice_data/ISMIP6/Ocean/Antarctica/AIS-32KM/NorESM_RCP85/Ocean_1995-2100.nc"
+    name        = "so"
+    units_in    = "PSU"
+    units_out   = "PSU"
+    unit_scale  = 1.0 
+    unit_offset = 0.0 
+    with_time   = True 
+    time_par    = 1995, 2100, 1
+/
+&noresm_rcp85_tf_proj
+    filename    = "ice_data/ISMIP6/Ocean/Antarctica/AIS-32KM/NorESM_RCP85/Thermal_forcing_1995-2100.nc"
+    name        = "tf"
+    units_in    = "K"
+    units_out   = "K"
+    unit_scale  = 1.0 
+    unit_offset = 0.0 
+    with_time   = True 
+    time_par    = 1995, 2100, 1
 /
