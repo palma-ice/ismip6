@@ -22,7 +22,7 @@ program test
 
 
     real(wp) :: time_init, time_end, time, dt
-    integer  :: n
+    integer  :: n, k
 
     ! ======================================================================
 
@@ -33,6 +33,17 @@ program test
                             domain="Antarctica",grid_name="ANT-32KM")
 
 
+    ! Print some information for static variables
+    write(*,*) "================" 
+    call print_var_range(ismip6%ts_ref%var, "ts_ref", mv) 
+    call print_var_range(ismip6%pr_ref%var, "pr_ref", mv) 
+    call print_var_range(ismip6%smb_ref%var,"smb_ref",mv) 
+    write(*,*) "----"
+    call print_var_range(ismip6%to_ref%var, "to_ref", mv) 
+    call print_var_range(ismip6%so_ref%var, "so_ref", mv) 
+    call print_var_range(ismip6%tf_ref%var, "tf_ref", mv) 
+    call print_var_range(ismip6%tf_cor%var, "tf_cor", mv) 
+    write(*,*) 
 
     ! ======================================================================
     
@@ -49,9 +60,11 @@ program test
         ! Update ismip6 forcing to current time
         call ismip6_forcing_update(ismip6,time)
 
+
         ! Check data
         write(*,*) "================"
         call print_var_range(ismip6%ts%var, "ts", mv,time) 
+        call print_var_range(ismip6%pr%var, "pr", mv,time) 
         call print_var_range(ismip6%smb%var,"smb",mv,time) 
         write(*,*) "----"
         call print_var_range(ismip6%to%var, "to", mv,time) 

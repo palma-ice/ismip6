@@ -23,6 +23,7 @@ module ismip6
 
         ! Atmospheric fields
         type(varslice_class)   :: ts
+        type(varslice_class)   :: pr
         type(varslice_class)   :: smb
 
         ! Oceanic fields 
@@ -37,12 +38,15 @@ module ismip6
 
         ! Atmospheric fields
         type(varslice_class)   :: ts_ref 
+        type(varslice_class)   :: pr_ref 
         type(varslice_class)   :: smb_ref
 
         type(varslice_class)   :: ts_hist 
+        type(varslice_class)   :: pr_hist 
         type(varslice_class)   :: smb_hist
 
         type(varslice_class)   :: ts_proj
+        type(varslice_class)   :: pr_proj
         type(varslice_class)   :: smb_proj
 
 
@@ -50,8 +54,7 @@ module ismip6
         type(varslice_class)   :: to_ref
         type(varslice_class)   :: so_ref
         type(varslice_class)   :: tf_ref
-        type(varslice_class)   :: dt_l_ref
-        type(varslice_class)   :: dt_nl_ref
+        type(varslice_class)   :: tf_cor
 
         type(varslice_class)   :: to_hist
         type(varslice_class)   :: so_hist
@@ -113,21 +116,23 @@ contains
         
         ! Amospheric fields
         call varslice_init_nml(ism%ts_ref,   filename,group=trim(group_prefix)//"ts_ref",domain=domain,grid_name=grid_name)
+        call varslice_init_nml(ism%pr_ref,   filename,group=trim(group_prefix)//"pr_ref",domain=domain,grid_name=grid_name)
         call varslice_init_nml(ism%smb_ref,  filename,group=trim(group_prefix)//"smb_ref",domain=domain,grid_name=grid_name)
         
         call varslice_init_nml(ism%ts_hist,  filename,group=trim(group_prefix)//"ts_hist",domain=domain,grid_name=grid_name)
+        call varslice_init_nml(ism%pr_hist,  filename,group=trim(group_prefix)//"pr_hist",domain=domain,grid_name=grid_name)
         call varslice_init_nml(ism%smb_hist, filename,group=trim(group_prefix)//"smb_hist",domain=domain,grid_name=grid_name)
 
         call varslice_init_nml(ism%ts_proj,  filename,group=trim(group_prefix)//"ts_proj",domain=domain,grid_name=grid_name)
+        call varslice_init_nml(ism%pr_proj,  filename,group=trim(group_prefix)//"pr_proj",domain=domain,grid_name=grid_name)
         call varslice_init_nml(ism%smb_proj, filename,group=trim(group_prefix)//"smb_proj",domain=domain,grid_name=grid_name)
 
         ! Oceanic fields
         call varslice_init_nml(ism%to_ref,   filename,group="to_ref",domain=domain,grid_name=grid_name)
         call varslice_init_nml(ism%so_ref,   filename,group="so_ref",domain=domain,grid_name=grid_name)
         call varslice_init_nml(ism%tf_ref,   filename,group="tf_ref",domain=domain,grid_name=grid_name)
-        call varslice_init_nml(ism%dt_l_ref, filename,group="dt_l_ref",domain=domain,grid_name=grid_name)
-        call varslice_init_nml(ism%dt_nl_ref,filename,group="dt_nl_ref",domain=domain,grid_name=grid_name)
-        
+        call varslice_init_nml(ism%tf_cor,   filename,group="tf_cor",domain=domain,grid_name=grid_name)
+
         call varslice_init_nml(ism%to_hist,  filename,group=trim(group_prefix)//"to_hist",domain=domain,grid_name=grid_name)
         call varslice_init_nml(ism%so_hist,  filename,group=trim(group_prefix)//"so_hist",domain=domain,grid_name=grid_name)
         call varslice_init_nml(ism%tf_hist,  filename,group=trim(group_prefix)//"tf_hist",domain=domain,grid_name=grid_name)
@@ -135,19 +140,19 @@ contains
         call varslice_init_nml(ism%to_proj,  filename,group=trim(group_prefix)//"to_proj",domain=domain,grid_name=grid_name)
         call varslice_init_nml(ism%so_proj,  filename,group=trim(group_prefix)//"so_proj",domain=domain,grid_name=grid_name)
         call varslice_init_nml(ism%tf_proj,  filename,group=trim(group_prefix)//"tf_proj",domain=domain,grid_name=grid_name)
-        
+
         ! Load time-independent fields
 
         ! Amospheric fields 
         call varslice_update(ism%ts_ref)
+        call varslice_update(ism%pr_ref)
         call varslice_update(ism%smb_ref)
 
         ! Oceanic fields
         call varslice_update(ism%to_ref)
         call varslice_update(ism%so_ref)
         call varslice_update(ism%tf_ref)
-        call varslice_update(ism%dt_l_ref)
-        call varslice_update(ism%dt_nl_ref)
+        call varslice_update(ism%tf_cor)
 
         return 
 
@@ -161,6 +166,10 @@ contains
         type(ismip6_forcing_class), intent(INOUT) :: ism
         real(wp), intent(IN) :: time
 
+        ! Local variables 
+        integer  :: k 
+        real(wp) :: tmp 
+
         ! Get slices for current time
 
         ! === Atmospheric fields ==================================
@@ -168,33 +177,41 @@ contains
         if (time .lt. 1950) then 
 
             call varslice_update(ism%ts_hist,1950.0_wp)
+            call varslice_update(ism%pr_hist,1950.0_wp)
             call varslice_update(ism%smb_hist,1950.0_wp)
 
             ism%ts  = ism%ts_hist 
+            ism%pr  = ism%pr_hist 
             ism%smb = ism%smb_hist 
             
         else if (time .ge. 1950 .and. time .le. 1994) then 
 
             call varslice_update(ism%ts_hist,time)
+            call varslice_update(ism%pr_hist,time)
             call varslice_update(ism%smb_hist,time)
 
             ism%ts  = ism%ts_hist 
+            ism%pr  = ism%pr_hist 
             ism%smb = ism%smb_hist 
             
         else if (time .ge. 1995 .and. time .le. 2100) then 
 
             call varslice_update(ism%ts_proj,time)
+            call varslice_update(ism%pr_proj,time)
             call varslice_update(ism%smb_proj,time)
 
             ism%ts  = ism%ts_proj
+            ism%pr  = ism%pr_proj
             ism%smb = ism%smb_proj
             
         else ! time .gt. 2100
 
             call varslice_update(ism%ts_proj,2100.0_wp)
+            call varslice_update(ism%pr_proj,2100.0_wp)
             call varslice_update(ism%smb_proj,2100.0_wp)
 
             ism%ts  = ism%ts_proj
+            ism%pr  = ism%pr_proj
             ism%smb = ism%smb_proj
             
         end if
@@ -249,10 +266,28 @@ contains
 
             
 
-        ! Apply additional calculations 
+        ! === Additional calculations ======================
 
-        ! [To do, as needed] 
+        ! Remove missing values 
+        do k = 1, size(ism%to%var,3)
+            tmp = minval(ism%to%var(:,:,k),mask=ism%to%var(:,:,k) .ne. mv)
+            where(ism%to%var(:,:,k) .eq. mv) 
+                ism%to%var(:,:,k) = tmp
+            end where 
+            tmp = maxval(ism%so%var(:,:,k),mask=ism%so%var(:,:,k) .ne. mv)
+            where(ism%so%var(:,:,k) .eq. mv) 
+                ism%so%var(:,:,k) = tmp
+            end where 
+        end do 
 
+
+        ! Apply oceanic correction factor to each depth level
+        do k = 1, size(ism%to%var,3)   
+            ism%to%var(:,:,k) = ism%to%var(:,:,k) + ism%tf_cor%var(:,:,1) 
+            ism%tf%var(:,:,k) = ism%tf%var(:,:,k) + ism%tf_cor%var(:,:,1) 
+        end do 
+
+        
         return 
 
     end subroutine ismip6_forcing_update
