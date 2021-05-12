@@ -72,13 +72,15 @@ contains
         integer,          optional, intent(IN)    :: rep        ! Only if with_time==True, and slice_method==range_*
         
         ! Local variables 
-        integer :: k_now, k0, k1, nt, nt_now  
+        integer :: k, k0, k1, nt, nt_now, nt_out
+        integer :: n1, n2, i, j, l    
         type(varslice_param_class) :: par 
         logical  :: with_time 
         real(wp) :: time_range(2) 
-        character(len=56) :: slice_method 
+        character(len=56) :: slice_method
+        character(len=56) :: vec_method 
         integer  :: range_rep 
-        
+        integer,  allocatable :: kk(:) 
         real(wp), allocatable :: var(:,:,:,:) 
 
         ! Define shortcuts
@@ -174,13 +176,12 @@ contains
             else 
                 ! Cases with a time dimension (more complicated)
 
-                ! 1. Determine time indices
+                ! Determine time indices
                 ! nt = size(vs%time)
                 ! do k_now = 1, nt 
                 !     if (vs%time(k_now) .eq. time_now) exit 
                 ! end do
                 call get_indices(k0,k1,vs%time,vs%time_range,trim(slice_method))
-
 
                 if (k0 .gt. 0 .and. k1 .gt. 0) then 
                     ! Dimension range is available for loading, proceed 
@@ -273,21 +274,114 @@ contains
                             ! Store data in vs%var 
                             vs%var = var 
 
+                        case("range_mean","range_sd","range_min","range_max","range_sum")
+                            ! Allocate vs%var to match desired output size 
+
+                            ! Define 'vec_method'
+                            n1 = index(slice_method,"_")
+                            n2 = len_trim(slice_method)
+                            vec_method = slice_method(n1+1:n2)
+
+                            ! Size of dimension out is the size of the 
+                            ! repitition desired. Ie, range_rep = 1 means 
+                            ! to apply mean/sd/etc to all values along dimension
+                            ! with the result of calculating 1 value. 
+                            ! range_rep = 12 means apply calculation to every 12th 
+                            ! value, resulting in 12 values along dimension.
+
+                            nt_out = vs%range_rep 
+                            
+                            ! Make sure that var has at least as many values as we expect 
+                            if (nt_out .gt. nt_now) then 
+                                write(*,*) "varslice_update:: Error: the specified time range &
+                                    & does not provide enough data points to be consistent with &
+                                    & the specified value of range_rep."
+                                write(*,*) "time_range      = ", vs%time_range 
+                                write(*,*) "nt (time_range) = ", nt_now 
+                                write(*,*) "range_rep       = ", vs%range_rep 
+                                write(*,*) "range_rep must be <= nt."
+                                stop 
+                            end if 
+
+                            deallocate(vs%var)
+
+                            select case(par%ndim)
+
+                                case(1)
+                                    allocate(vs%var(nt_out,1,1,1))
+
+                                    ! Calculate each slice 
+                                    do k = 1, nt_out 
+
+                                        ! Get indices for current repitition
+                                        call get_rep_indices(kk,i0=k,i1=nt_now,nrep=vs%range_rep)
+
+                                        ! Calculate the vector value desired (mean,sd,...)
+                                        call calc_vec_value(vs%var(k,1,1,1),var(kk,1,1,1),vec_method,mv)
+
+                                    end do 
+
+                                case(2)
+                                    allocate(vs%var(size(var,1),nt_out,1,1))
+
+                                    ! Calculate each slice 
+                                    do k = 1, nt_out 
+
+                                        ! Get indices for current repitition
+                                        call get_rep_indices(kk,i0=k,i1=nt_now,nrep=vs%range_rep)
+
+                                        do i = 1, size(vs%var,1)
+                                            ! Calculate the vector value desired (mean,sd,...)
+                                            call calc_vec_value(vs%var(i,k,1,1),var(i,kk,1,1),vec_method,mv)
+                                        end do 
+
+                                    end do 
+                                    
+                                case(3)
+                                    allocate(vs%var(size(var,1),size(var,2),nt_out,1))
+                                
+                                    ! Calculate each slice 
+                                    do k = 1, nt_out 
+
+                                        ! Get indices for current repitition
+                                        call get_rep_indices(kk,i0=k,i1=nt_now,nrep=vs%range_rep)
+                                        
+                                        do j = 1, size(vs%var,2)
+                                        do i = 1, size(vs%var,1)
+                                            ! Calculate the vector value desired (mean,sd,...)
+                                            call calc_vec_value(vs%var(i,j,k,1),var(i,j,kk,1),vec_method,mv)
+                                        end do
+                                        end do 
+                                        
+                                    end do 
+                                    
+                                case(4)
+                                    allocate(vs%var(size(var,1),size(var,2),size(var,3),nt_out))
+
+                                    ! Calculate each slice 
+                                    do k = 1, nt_out 
+
+                                        ! Get indices for current repitition
+                                        call get_rep_indices(kk,i0=k,i1=nt_now,nrep=vs%range_rep)
+
+                                        do l = 1, size(vs%var,3)
+                                        do j = 1, size(vs%var,2)
+                                        do i = 1, size(vs%var,1)
+                                            ! Calculate the vector value desired (mean,sd,...)
+                                            call calc_vec_value(vs%var(i,j,l,k),var(i,j,l,kk),vec_method,mv)
+                                        end do
+                                        end do
+                                        end do 
+                                        
+                                    end do 
+                                    
+                            end select
+
+
                     end select
 
 
-                    select case(par%ndim)
-
-                        case(1)
-
-                        case(2)
-
-
-                        case(3)
-        
-                        case(4)
-
-                    end select
+                            
 
 
                 else 
@@ -376,7 +470,8 @@ contains
 
             case("range","range_mean","range_sd","range_min","range_max") 
 
-                if (k0 .eq. size(x,1) .or. k1 .eq. 1) then 
+                if ( xmin .ne. xmax .and. &
+                      (k0 .eq. size(x,1) .or. k1 .eq. 1) ) then 
                     k0 = -1
                     k1 = -1 
                 end if 
@@ -388,6 +483,117 @@ contains
 
     end subroutine get_indices
 
+    subroutine get_rep_indices(ii,i0,i1,nrep)
+        ! Given starting value i0 and final value i1, 
+        ! and number of values to skip nrep, generate 
+        ! an vector of indices ii. 
+        ! eg, i0 = 1, i1 = 36, nrep = 12
+        ! => ii = [1,13,25]
+        ! eg, i0 = 2, i1 = 36, nrep = 12
+        ! => ii = [2,14,26]
+        
+        implicit none 
+
+        integer, allocatable, intent(OUT) :: ii(:) 
+        integer, intent(IN) :: i0 
+        integer, intent(IN) :: i1 
+        integer, intent(IN) :: nrep 
+
+        ! Local variables   
+        integer :: i, ni, ntot 
+        integer :: jj(10000)
+
+        ni = i1-i0+1 
+
+        jj = 0  
+
+        do i = 1, ni
+            jj(i) = i0 + nrep*(i-1) 
+            if (jj(i) .gt. i1) then 
+                jj(i) = 0
+                exit 
+            end if 
+        end do 
+
+        ntot = count(jj .gt. 0)
+        if (allocated(ii)) deallocate(ii)
+        allocate(ii(ntot)) 
+
+        ii = jj(1:ntot) 
+
+        return 
+
+    end subroutine get_rep_indices
+
+    subroutine calc_vec_value(val,var,method,mv)
+
+        implicit none 
+
+        real(wp),         intent(OUT) :: val 
+        real(wp),         intent(IN)  :: var(:) 
+        character(len=*), intent(IN)  :: method 
+        real(wp),         intent(IN)  :: mv 
+
+        ! Local variables 
+        integer  :: ntot 
+        real(wp) :: mean, variance 
+
+        ntot = count(var .ne. mv)
+        
+        if (ntot .gt. 0) then 
+            ! Values available for calculations 
+
+            select case(trim(method))
+
+                case("sum")
+
+                    val = sum(var,mask=var.ne.mv)
+
+                case("mean")
+
+                    val = sum(var,mask=var.ne.mv) / real(ntot,wp)
+
+                case("sd")
+
+                    if (ntot .ge. 2) then
+
+                        mean     = sum(var,mask=var.ne.mv) / real(ntot,wp)
+                        variance = real(ntot/(ntot-1),wp) &
+                                        *sum( (var-mean)**2, mask=var.ne.mv)
+                        val      = sqrt(variance)
+
+                    else 
+
+                        val = mv 
+
+                    end if 
+
+                case("min") 
+
+                    val = minval(var,mask=var.ne.mv)
+
+                case("max")
+
+                    val = maxval(var,mask=var.ne.mv)
+
+                case DEFAULT 
+
+                    write(*,*) "calc_vec_value:: Error: method not recognized."
+                    write(*,*) "method = ", trim(method) 
+                    stop 
+
+            end select
+
+        else 
+            ! No values available in vector, set to missing value 
+
+            val = mv 
+
+        end if 
+
+        return 
+
+    end subroutine calc_vec_value
 
     subroutine varslice_init_nml(vs,filename,group,domain,grid_name,verbose)
         ! Routine to load information related to a given 

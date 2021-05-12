@@ -179,9 +179,9 @@ contains
         
         if (time .lt. 1950) then 
 
-            call varslice_update(ism%ts_hist,[1950.0_wp],method=slice_method)
-            call varslice_update(ism%pr_hist,[1950.0_wp],method=slice_method)
-            call varslice_update(ism%smb_hist,[1950.0_wp],method=slice_method)
+            call varslice_update(ism%ts_hist, [1950.0_wp,1980.0_wp],method="range_mean")
+            call varslice_update(ism%pr_hist, [1950.0_wp,1980.0_wp],method="range_mean")
+            call varslice_update(ism%smb_hist,[1950.0_wp,1980.0_wp],method="range_mean")
 
             ism%ts  = ism%ts_hist 
             ism%pr  = ism%pr_hist 
@@ -209,9 +209,9 @@ contains
             
         else ! time .gt. 2100
 
-            call varslice_update(ism%ts_proj,[2100.0_wp],method=slice_method)
-            call varslice_update(ism%pr_proj,[2100.0_wp],method=slice_method)
-            call varslice_update(ism%smb_proj,[2100.0_wp],method=slice_method)
+            call varslice_update(ism%ts_proj, [2090.0_wp,2100.0_wp],method="range_mean")
+            call varslice_update(ism%pr_proj, [2090.0_wp,2100.0_wp],method="range_mean")
+            call varslice_update(ism%smb_proj,[2090.0_wp,2100.0_wp],method="range_mean")
 
             ism%ts  = ism%ts_proj
             ism%pr  = ism%pr_proj
@@ -221,18 +221,18 @@ contains
 
         ! === Oceanic fields ==================================
 
-        if (time .lt. 1850) then 
+        if (time .lt. 1950) then 
 
             ! Oceanic fields 
-            call varslice_update(ism%to_hist,[1850.0_wp],method=slice_method)
-            call varslice_update(ism%so_hist,[1850.0_wp],method=slice_method)
-            call varslice_update(ism%tf_hist,[1850.0_wp],method=slice_method)
+            call varslice_update(ism%to_hist,[1950.0_wp,1980.0_wp],method="range_mean")
+            call varslice_update(ism%so_hist,[1950.0_wp,1980.0_wp],method="range_mean")
+            call varslice_update(ism%tf_hist,[1950.0_wp,1980.0_wp],method="range_mean")
 
             ism%to = ism%to_hist
             ism%so = ism%so_hist
             ism%tf = ism%tf_hist
             
-        else if (time .ge. 1850 .and. time .le. 1994) then 
+        else if (time .ge. 1950 .and. time .le. 1994) then 
 
             ! Oceanic fields 
             call varslice_update(ism%to_hist,[time],method=slice_method)
@@ -257,9 +257,9 @@ contains
         else ! time .gt. 2100
 
             ! Oceanic fields 
-            call varslice_update(ism%to_proj,[2100.0_wp],method=slice_method)
-            call varslice_update(ism%so_proj,[2100.0_wp],method=slice_method)
-            call varslice_update(ism%tf_proj,[2100.0_wp],method=slice_method)
+            call varslice_update(ism%to_proj,[2090.0_wp,2100.0_wp],method="range_mean")
+            call varslice_update(ism%so_proj,[2090.0_wp,2100.0_wp],method="range_mean")
+            call varslice_update(ism%tf_proj,[2090.0_wp,2100.0_wp],method="range_mean")
 
             ism%to = ism%to_proj
             ism%so = ism%so_proj
