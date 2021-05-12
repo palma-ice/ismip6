@@ -256,6 +256,7 @@ contains
 
                         case("exact","range")
                             ! Allocate vs%var to the same size as var 
+                            ! and store all values 
 
                             if (size(vs%var,1) .eq. size(var,1) .and. &
                                 size(vs%var,2) .eq. size(var,2) .and. &
@@ -275,7 +276,8 @@ contains
                             vs%var = var 
 
                         case("range_mean","range_sd","range_min","range_max","range_sum")
-                            ! Allocate vs%var to match desired output size 
+                            ! Allocate vs%var to match desired output size, 
+                            ! and calculate output values 
 
                             ! Define 'vec_method'
                             n1 = index(slice_method,"_")
@@ -345,7 +347,7 @@ contains
 
                                         ! Get indices for current repitition
                                         call get_rep_indices(kk,i0=k,i1=nt_now,nrep=vs%range_rep)
-                                        
+
                                         do j = 1, size(vs%var,2)
                                         do i = 1, size(vs%var,1)
                                             ! Calculate the vector value desired (mean,sd,...)
@@ -379,11 +381,7 @@ contains
 
 
                     end select
-
-
-                            
-
-
+                    
                 else 
                     ! Dimension range was not found, set variable to missing values 
 
