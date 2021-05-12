@@ -274,26 +274,26 @@ contains
         ! Add reference ocean values to current anomalies 
 
         do k = 1, size(ism%to%var,3)
-            where(ism%to%var(:,:,k) .ne. mv .and. ism%to_ref%var(:,:,k) .ne. mv)
-                ism%to%var(:,:,k) = ism%to%var(:,:,k) + ism%to_ref%var(:,:,k)
+            where(ism%to%var(:,:,k,1) .ne. mv .and. ism%to_ref%var(:,:,k,1) .ne. mv)
+                ism%to%var(:,:,k,1) = ism%to%var(:,:,k,1) + ism%to_ref%var(:,:,k,1)
             end where 
-            where(ism%so%var(:,:,k) .ne. mv .and. ism%so_ref%var(:,:,k) .ne. mv)
-                ism%so%var(:,:,k) = ism%so%var(:,:,k) + ism%so_ref%var(:,:,k)
+            where(ism%so%var(:,:,k,1) .ne. mv .and. ism%so_ref%var(:,:,k,1) .ne. mv)
+                ism%so%var(:,:,k,1) = ism%so%var(:,:,k,1) + ism%so_ref%var(:,:,k,1)
             end where 
         end do 
         
         ! Remove missing values, if possible
         do k = 1, size(ism%to%var,3)
-            if (count(ism%to%var(:,:,k) .ne. mv) .gt. 0) then
-                tmp = minval(ism%to%var(:,:,k),mask=ism%to%var(:,:,k) .ne. mv)
-                where(ism%to%var(:,:,k) .eq. mv) 
-                    ism%to%var(:,:,k) = tmp
+            if (count(ism%to%var(:,:,k,1) .ne. mv) .gt. 0) then
+                tmp = minval(ism%to%var(:,:,k,1),mask=ism%to%var(:,:,k,1) .ne. mv)
+                where(ism%to%var(:,:,k,1) .eq. mv) 
+                    ism%to%var(:,:,k,1) = tmp
                 end where 
             end if
-            if (count(ism%so%var(:,:,k) .ne. mv) .gt. 0) then
-                tmp = maxval(ism%so%var(:,:,k),mask=ism%so%var(:,:,k) .ne. mv)
-                where(ism%so%var(:,:,k) .eq. mv) 
-                    ism%so%var(:,:,k) = tmp
+            if (count(ism%so%var(:,:,k,1) .ne. mv) .gt. 0) then
+                tmp = maxval(ism%so%var(:,:,k,1),mask=ism%so%var(:,:,k,1) .ne. mv)
+                where(ism%so%var(:,:,k,1) .eq. mv) 
+                    ism%so%var(:,:,k,1) = tmp
                 end where 
             end if
         end do 
@@ -301,11 +301,11 @@ contains
 
         ! Apply oceanic correction factor to each depth level
         do k = 1, size(ism%to%var,3)
-            where(ism%to%var(:,:,k) .ne. mv .and. ism%tf_cor%var(:,:,1) .ne. mv)   
-                ism%to%var(:,:,k) = ism%to%var(:,:,k) + ism%tf_cor%var(:,:,1)
+            where(ism%to%var(:,:,k,1) .ne. mv .and. ism%tf_cor%var(:,:,1,1) .ne. mv)   
+                ism%to%var(:,:,k,1) = ism%to%var(:,:,k,1) + ism%tf_cor%var(:,:,1,1)
             end where
-            where(ism%tf%var(:,:,k) .ne. mv .and. ism%tf_cor%var(:,:,1) .ne. mv)
-                ism%tf%var(:,:,k) = ism%tf%var(:,:,k) + ism%tf_cor%var(:,:,1) 
+            where(ism%tf%var(:,:,k,1) .ne. mv .and. ism%tf_cor%var(:,:,1,1) .ne. mv)
+                ism%tf%var(:,:,k,1) = ism%tf%var(:,:,k,1) + ism%tf_cor%var(:,:,1,1) 
             end where
         end do 
 

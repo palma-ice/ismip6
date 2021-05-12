@@ -83,7 +83,7 @@ contains
 
         implicit none 
 
-        real(wp),         intent(IN) :: var(:,:,:) 
+        real(wp),         intent(IN) :: var(:,:,:,:) 
         character(len=*), intent(IN) :: name
         real(wp),         intent(IN) :: mv 
         real(wp), intent(IN), optional :: time 

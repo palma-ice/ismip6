@@ -47,7 +47,7 @@ module varslice
         real(wp), allocatable :: lev(:)  
 
         real(wp), allocatable :: time(:)  
-        real(wp), allocatable :: var(:,:,:) 
+        real(wp), allocatable :: var(:,:,:,:) 
     end type 
 
     private 
@@ -78,7 +78,8 @@ contains
         real(wp) :: time_range(2) 
         character(len=56) :: slice_method 
         integer  :: range_rep 
-        real(wp) :: tmin, tmax 
+        
+        real(wp), allocatable :: var(:,:,:,:) 
 
         ! Define shortcuts
         par = vs%par 
@@ -150,17 +151,17 @@ contains
                     case(1)
 
                         ! 1D variable
-                        call nc_read(par%filename,par%name,vs%var(:,1,1),missing_value=mv)
+                        call nc_read(par%filename,par%name,vs%var(:,1,1,1),missing_value=mv)
 
                     case(2)
 
                         ! 2D variable 
-                        call nc_read(par%filename,par%name,vs%var(:,:,1),missing_value=mv)
+                        call nc_read(par%filename,par%name,vs%var(:,:,1,1),missing_value=mv)
 
                     case(3)
 
                         ! 3D variable 
-                        call nc_read(par%filename,par%name,vs%var,missing_value=mv)
+                        call nc_read(par%filename,par%name,vs%var(:,:,:,1),missing_value=mv)
 
                     case DEFAULT 
 
@@ -190,30 +191,45 @@ contains
                     ! write(*,*) "time: ", vs%time_range, k0, k1 
                     ! write(*,*) "      ", vs%time(k0), vs%time(k1)
 
+                    if (allocated(var)) deallocate(var) 
+
                     select case(par%ndim)
 
                         case(1)
 
+                            ! Allocate local var to the right size 
+                            allocate(var(nt_now,1,1,1))
+
                             ! 0D (point) variable plus time dimension 
-                            call nc_read(par%filename,par%name,vs%var(1:nt_now,1,1),missing_value=mv, &
+                            call nc_read(par%filename,par%name,var,missing_value=mv, &
                                     start=[k0],count=[nt_now])
+
 
                         case(2)
 
+                            ! Allocate local var to the right size 
+                            allocate(var(par%dim(1),nt_now,1,1))
+
                             ! 1D variable plus time dimension 
-                            call nc_read(par%filename,par%name,vs%var(:,1:nt_now,1),missing_value=mv, &
+                            call nc_read(par%filename,par%name,var,missing_value=mv, &
                                     start=[1,k0],count=[par%dim(1),nt_now])
 
                         case(3)
-     
+        
+                            ! Allocate local var to the right size 
+                            allocate(var(par%dim(1),par%dim(2),nt_now,1))
+
                             ! 2D variable plus time dimension 
-                            call nc_read(par%filename,par%name,vs%var(:,:,1:nt_now),missing_value=mv, &
+                            call nc_read(par%filename,par%name,var,missing_value=mv, &
                                     start=[1,1,k0],count=[par%dim(1),par%dim(2),nt_now])
 
                         case(4)
 
+                            ! Allocate local var to the right size 
+                            allocate(var(par%dim(1),par%dim(2),par%dim(3),nt_now))
+
                             ! 3D variable plus time dimension 
-                            call nc_read(par%filename,par%name,vs%var,missing_value=mv, &
+                            call nc_read(par%filename,par%name,var,missing_value=mv, &
                                     start=[1,1,1,k0],count=[par%dim(1),par%dim(2),par%dim(3),nt_now]) 
 
                         case DEFAULT 
@@ -223,6 +239,56 @@ contains
                             stop 
 
                     end select
+
+
+                    ! At this point, the local var variable has been defined 
+                    ! with data from the file for the appropriate time indices 
+
+                    ! Next, we need to allocate the vs%var variable to the 
+                    ! appropriate size and perform any calculations on the time 
+                    ! indices of the local var variable as needed. 
+
+
+                    ! Now, allocate the vs%var variable to the right size 
+
+                    select case(trim(vs%slice_method)) 
+
+                        case("exact","range")
+                            ! Allocate vs%var to the same size as var 
+
+                            if (size(vs%var,1) .eq. size(var,1) .and. &
+                                size(vs%var,2) .eq. size(var,2) .and. &
+                                size(vs%var,3) .eq. size(var,3) .and. &
+                                size(vs%var,4) .eq. size(var,4) ) then 
+
+                                ! No allocation needed size is the same 
+
+                            else 
+
+                                deallocate(vs%var)
+                                allocate(vs%var(size(vs%var,1),size(vs%var,2),size(vs%var,3),size(vs%var,4)))
+
+                            end if 
+
+                            ! Store data in vs%var 
+                            vs%var = var 
+
+                    end select
+
+
+                    select case(par%ndim)
+
+                        case(1)
+
+                        case(2)
+
+
+                        case(3)
+        
+                        case(4)
+
+                    end select
+
 
                 else 
                     ! Dimension range was not found, set variable to missing values 
@@ -437,14 +503,14 @@ contains
 
             case(1)
                 if (with_time) then 
-                    allocate(vs%var(1,1,1))
+                    allocate(vs%var(1,1,1,1))
                 else 
-                    allocate(vs%var(vs%par%dim(1),1,1))
+                    allocate(vs%var(vs%par%dim(1),1,1,1))
                 end if 
             case(2)
                 if (with_time) then 
                     allocate(vs%x(vs%par%dim(1)))
-                    allocate(vs%var(vs%par%dim(1),1,1))
+                    allocate(vs%var(vs%par%dim(1),1,1,1))
 
                     if (nc_exists_var(vs%par%filename,dim_names(1))) then 
                         call nc_read(vs%par%filename,dim_names(1),vs%x)
@@ -454,7 +520,7 @@ contains
                 else 
                     allocate(vs%x(vs%par%dim(1)))
                     allocate(vs%y(vs%par%dim(2)))
-                    allocate(vs%var(vs%par%dim(1),vs%par%dim(2),1))
+                    allocate(vs%var(vs%par%dim(1),vs%par%dim(2),1,1))
 
                     if (nc_exists_var(vs%par%filename,dim_names(1))) then 
                         call nc_read(vs%par%filename,dim_names(1),vs%x)
@@ -473,7 +539,7 @@ contains
                 if (with_time) then
                     allocate(vs%x(vs%par%dim(1)))
                     allocate(vs%y(vs%par%dim(2)))
-                    allocate(vs%var(vs%par%dim(1),vs%par%dim(2),1))
+                    allocate(vs%var(vs%par%dim(1),vs%par%dim(2),1,1))
 
                     if (nc_exists_var(vs%par%filename,dim_names(1))) then 
                         call nc_read(vs%par%filename,dim_names(1),vs%x)
@@ -490,7 +556,7 @@ contains
                     allocate(vs%x(vs%par%dim(1)))
                     allocate(vs%y(vs%par%dim(2)))
                     allocate(vs%lev(vs%par%dim(3)))
-                    allocate(vs%var(vs%par%dim(1),vs%par%dim(2),vs%par%dim(3)))
+                    allocate(vs%var(vs%par%dim(1),vs%par%dim(2),vs%par%dim(3),1))
 
                     if (nc_exists_var(vs%par%filename,dim_names(1))) then 
                         call nc_read(vs%par%filename,dim_names(1),vs%x)
@@ -509,15 +575,13 @@ contains
                     end if
                     
                 end if
-
-                
-                 
+                  
             case(4)
                 if (with_time) then 
                     allocate(vs%x(vs%par%dim(1)))
                     allocate(vs%y(vs%par%dim(2)))
                     allocate(vs%lev(vs%par%dim(3)))
-                    allocate(vs%var(vs%par%dim(1),vs%par%dim(2),vs%par%dim(3)))
+                    allocate(vs%var(vs%par%dim(1),vs%par%dim(2),vs%par%dim(3),1))
 
                     if (nc_exists_var(vs%par%filename,dim_names(1))) then 
                         call nc_read(vs%par%filename,dim_names(1),vs%x)
@@ -542,7 +606,7 @@ contains
 
                     
             case DEFAULT 
-                write(*,*) "varslice_init_data:: ndim not allowed."
+                write(*,*) "varslice_init_data:: ndim > 4 not allowed."
                 write(*,*) "ndim = ", vs%par%ndim 
                 stop 
 
