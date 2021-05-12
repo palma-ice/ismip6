@@ -88,12 +88,21 @@ contains
         real(wp),         intent(IN) :: mv 
         real(wp), intent(IN), optional :: time 
 
-        if (present(time)) then 
-            write(*,"(f10.1,2x,a10,a3,2f14.3)") time, trim(name), ": ", &
-                minval(var,mask=var.ne.mv), maxval(var,mask=var.ne.mv)
+        ! Local variables 
+        real(wp) :: vmin, vmax 
+
+        if (count(var.ne.mv) .gt. 0) then 
+            vmin = minval(var,mask=var.ne.mv)
+            vmax = maxval(var,mask=var.ne.mv)
         else 
-            write(*,"(10x,2x,a10,a3,2f14.3)") trim(name), ": ", &
-                minval(var,mask=var.ne.mv), maxval(var,mask=var.ne.mv)
+            vmin = mv 
+            vmax = mv 
+        end if 
+
+        if (present(time)) then 
+            write(*,"(f10.1,2x,a10,a3,2f14.3)") time, trim(name), ": ", vmin, vmax
+        else 
+            write(*,"(10x,2x,a10,a3,2f14.3)") trim(name), ": ", vmin, vmax
         end if 
 
         return 

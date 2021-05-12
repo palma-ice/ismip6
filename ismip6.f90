@@ -169,16 +169,19 @@ contains
         ! Local variables 
         integer  :: k 
         real(wp) :: tmp 
+        character(len=56) :: slice_method 
 
         ! Get slices for current time
+
+        slice_method = "exact" 
 
         ! === Atmospheric fields ==================================
         
         if (time .lt. 1950) then 
 
-            call varslice_update(ism%ts_hist,1950.0_wp)
-            call varslice_update(ism%pr_hist,1950.0_wp)
-            call varslice_update(ism%smb_hist,1950.0_wp)
+            call varslice_update(ism%ts_hist,[1950.0_wp],method=slice_method)
+            call varslice_update(ism%pr_hist,[1950.0_wp],method=slice_method)
+            call varslice_update(ism%smb_hist,[1950.0_wp],method=slice_method)
 
             ism%ts  = ism%ts_hist 
             ism%pr  = ism%pr_hist 
@@ -186,9 +189,9 @@ contains
             
         else if (time .ge. 1950 .and. time .le. 1994) then 
 
-            call varslice_update(ism%ts_hist,time)
-            call varslice_update(ism%pr_hist,time)
-            call varslice_update(ism%smb_hist,time)
+            call varslice_update(ism%ts_hist,[time],method=slice_method)
+            call varslice_update(ism%pr_hist,[time],method=slice_method)
+            call varslice_update(ism%smb_hist,[time],method=slice_method)
 
             ism%ts  = ism%ts_hist 
             ism%pr  = ism%pr_hist 
@@ -196,9 +199,9 @@ contains
             
         else if (time .ge. 1995 .and. time .le. 2100) then 
 
-            call varslice_update(ism%ts_proj,time)
-            call varslice_update(ism%pr_proj,time)
-            call varslice_update(ism%smb_proj,time)
+            call varslice_update(ism%ts_proj,[time],method=slice_method)
+            call varslice_update(ism%pr_proj,[time],method=slice_method)
+            call varslice_update(ism%smb_proj,[time],method=slice_method)
 
             ism%ts  = ism%ts_proj
             ism%pr  = ism%pr_proj
@@ -206,9 +209,9 @@ contains
             
         else ! time .gt. 2100
 
-            call varslice_update(ism%ts_proj,2100.0_wp)
-            call varslice_update(ism%pr_proj,2100.0_wp)
-            call varslice_update(ism%smb_proj,2100.0_wp)
+            call varslice_update(ism%ts_proj,[2100.0_wp],method=slice_method)
+            call varslice_update(ism%pr_proj,[2100.0_wp],method=slice_method)
+            call varslice_update(ism%smb_proj,[2100.0_wp],method=slice_method)
 
             ism%ts  = ism%ts_proj
             ism%pr  = ism%pr_proj
@@ -221,9 +224,9 @@ contains
         if (time .lt. 1850) then 
 
             ! Oceanic fields 
-            call varslice_update(ism%to_hist,1850.0_wp)
-            call varslice_update(ism%so_hist,1850.0_wp)
-            call varslice_update(ism%tf_hist,1850.0_wp)
+            call varslice_update(ism%to_hist,[1850.0_wp],method=slice_method)
+            call varslice_update(ism%so_hist,[1850.0_wp],method=slice_method)
+            call varslice_update(ism%tf_hist,[1850.0_wp],method=slice_method)
 
             ism%to = ism%to_hist
             ism%so = ism%so_hist
@@ -232,9 +235,9 @@ contains
         else if (time .ge. 1850 .and. time .le. 1994) then 
 
             ! Oceanic fields 
-            call varslice_update(ism%to_hist,time)
-            call varslice_update(ism%so_hist,time)
-            call varslice_update(ism%tf_hist,time)
+            call varslice_update(ism%to_hist,[time],method=slice_method)
+            call varslice_update(ism%so_hist,[time],method=slice_method)
+            call varslice_update(ism%tf_hist,[time],method=slice_method)
 
             ism%to = ism%to_hist
             ism%so = ism%so_hist
@@ -243,9 +246,9 @@ contains
         else if (time .ge. 1995 .and. time .le. 2100) then 
 
             ! Oceanic fields 
-            call varslice_update(ism%to_proj,time)
-            call varslice_update(ism%so_proj,time)
-            call varslice_update(ism%tf_proj,time)
+            call varslice_update(ism%to_proj,[time],method=slice_method)
+            call varslice_update(ism%so_proj,[time],method=slice_method)
+            call varslice_update(ism%tf_proj,[time],method=slice_method)
 
             ism%to = ism%to_proj
             ism%so = ism%so_proj
@@ -254,9 +257,9 @@ contains
         else ! time .gt. 2100
 
             ! Oceanic fields 
-            call varslice_update(ism%to_proj,2100.0_wp)
-            call varslice_update(ism%so_proj,2100.0_wp)
-            call varslice_update(ism%tf_proj,2100.0_wp)
+            call varslice_update(ism%to_proj,[2100.0_wp],method=slice_method)
+            call varslice_update(ism%so_proj,[2100.0_wp],method=slice_method)
+            call varslice_update(ism%tf_proj,[2100.0_wp],method=slice_method)
 
             ism%to = ism%to_proj
             ism%so = ism%so_proj
@@ -279,23 +282,31 @@ contains
             end where 
         end do 
         
-        ! Remove missing values 
+        ! Remove missing values, if possible
         do k = 1, size(ism%to%var,3)
-            tmp = minval(ism%to%var(:,:,k),mask=ism%to%var(:,:,k) .ne. mv)
-            where(ism%to%var(:,:,k) .eq. mv) 
-                ism%to%var(:,:,k) = tmp
-            end where 
-            tmp = maxval(ism%so%var(:,:,k),mask=ism%so%var(:,:,k) .ne. mv)
-            where(ism%so%var(:,:,k) .eq. mv) 
-                ism%so%var(:,:,k) = tmp
-            end where 
+            if (count(ism%to%var(:,:,k) .ne. mv) .gt. 0) then
+                tmp = minval(ism%to%var(:,:,k),mask=ism%to%var(:,:,k) .ne. mv)
+                where(ism%to%var(:,:,k) .eq. mv) 
+                    ism%to%var(:,:,k) = tmp
+                end where 
+            end if
+            if (count(ism%so%var(:,:,k) .ne. mv) .gt. 0) then
+                tmp = maxval(ism%so%var(:,:,k),mask=ism%so%var(:,:,k) .ne. mv)
+                where(ism%so%var(:,:,k) .eq. mv) 
+                    ism%so%var(:,:,k) = tmp
+                end where 
+            end if
         end do 
 
 
         ! Apply oceanic correction factor to each depth level
-        do k = 1, size(ism%to%var,3)   
-            ism%to%var(:,:,k) = ism%to%var(:,:,k) + ism%tf_cor%var(:,:,1) 
-            ism%tf%var(:,:,k) = ism%tf%var(:,:,k) + ism%tf_cor%var(:,:,1) 
+        do k = 1, size(ism%to%var,3)
+            where(ism%to%var(:,:,k) .ne. mv .and. ism%tf_cor%var(:,:,1) .ne. mv)   
+                ism%to%var(:,:,k) = ism%to%var(:,:,k) + ism%tf_cor%var(:,:,1)
+            end where
+            where(ism%tf%var(:,:,k) .ne. mv .and. ism%tf_cor%var(:,:,1) .ne. mv)
+                ism%tf%var(:,:,k) = ism%tf%var(:,:,k) + ism%tf_cor%var(:,:,1) 
+            end where
         end do 
 
         

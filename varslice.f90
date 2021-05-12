@@ -36,8 +36,12 @@ module varslice
 
         type(varslice_param_class) :: par 
 
-        real(wp) :: time_now
+        ! Parameters defined during update call
+        real(wp)          :: time_range(2)
+        character(len=56) :: slice_method 
+        integer           :: range_rep 
         
+        ! Variable information
         real(wp), allocatable :: x(:) 
         real(wp), allocatable :: y(:)
         real(wp), allocatable :: lev(:)  
@@ -56,20 +60,25 @@ module varslice
 contains
 
     
-    subroutine varslice_update(vs,time)
+    subroutine varslice_update(vs,time,method,rep)
         ! Routine to update transient climate forcing to match 
         ! current `time`. 
 
         implicit none 
 
-        type(varslice_class),  intent(INOUT) :: vs
-        real(wp), optional,     intent(IN)   :: time       ! [yr] Current time 
-
+        type(varslice_class),       intent(INOUT) :: vs
+        real(wp),         optional, intent(IN)    :: time(:)    ! [yr] Current time, or time range 
+        character(len=*), optional, intent(IN)    :: method     ! slice_method (only if with_time==True)
+        integer,          optional, intent(IN)    :: rep        ! Only if with_time==True, and slice_method==range_*
+        
         ! Local variables 
-        integer :: k_now, k0, k1, nt  
+        integer :: k_now, k0, k1, nt, nt_now  
         type(varslice_param_class) :: par 
-        logical :: with_time 
-        real(wp) :: time_now 
+        logical  :: with_time 
+        real(wp) :: time_range(2) 
+        character(len=56) :: slice_method 
+        integer  :: range_rep 
+        real(wp) :: tmin, tmax 
 
         ! Define shortcuts
         par = vs%par 
@@ -78,89 +87,151 @@ contains
         if (with_time) then 
 
             if (.not. present(time)) then 
-                write(*,*) "varslice_update:: Error: current time must be given as an argument."
+                write(*,*) "varslice_update:: Error: current time or time range &
+                            &must be given as an argument (1D array)."
                 stop 
             end if 
 
-        end if 
-
-        if (present(time)) then 
-            time_now = time 
-        else 
-            time_now = vs%time_now 
-        end if 
-
-        if (with_time .and. vs%time_now .eq. time_now) then 
-
-            ! Do nothing, the varslice object is already up to date 
-            ! fo the current time. 
-
-        else 
-
-            ! 1. Determine the index of the current time, if needed
-            if (with_time) then 
-                nt = size(vs%time)
-                do k_now = 1, nt 
-                    if (vs%time(k_now) .eq. time_now) exit 
-                end do
+            ! Consistency check 
+            if (size(time,1) .eq. 2) then 
+                if (time(2) .lt. time(1)) then 
+                    write(*,*) "varslice_update:: Error: time(2) should be >= time(1)."
+                    write(*,*) "time = ", time
+                    stop 
+                end if
             end if 
 
+        end if 
+
+        slice_method = "exact"
+        if (present(method)) slice_method = trim(method)
+
+        range_rep = 1
+        if (present(rep)) range_rep = rep 
+
+
+        if (present(time)) then
+
+            if (size(time) .eq. 2) then 
+                time_range = time
+            else 
+                time_range(1:2) = time(1) 
+            end if 
+
+        else 
+
+            time_range = vs%time_range 
+
+        end if 
+
+        
+        if ( with_time .and. trim(slice_method) .eq. trim(vs%slice_method) &
+                .and. range_rep .eq. vs%range_rep &
+                .and. vs%time_range(1) .eq. time_range(1) &
+                .and. vs%time_range(2) .eq. time_range(2) ) then 
+
+            ! Do nothing, the varslice object is already up to date 
+            ! fo the current time and method. 
+
+        else 
+
+            ! Set parameters in varslice object 
+            vs%slice_method = trim(slice_method)
+            vs%range_rep    = range_rep 
+            vs%time_range   = time_range 
+
             ! 2. Read variable and convert units as needed
-            select case(par%ndim)
 
-                case(1)
+            if (.not. with_time) then 
+                ! Handle cases that do not have time dimension (simpler)
 
-                    if (with_time) then 
-                        ! 0D (point) variable plus time dimension 
-                        call nc_read(par%filename,par%name,vs%var(1,1,1),missing_value=mv, &
-                                start=[k_now],count=[1])
-                    else 
+                select case(par%ndim)
+
+                    case(1)
+
                         ! 1D variable
                         call nc_read(par%filename,par%name,vs%var(:,1,1),missing_value=mv)
-                    end if 
 
-                case(2)
+                    case(2)
 
-                    if (with_time) then 
-                        ! 1D variable plus time dimension 
-                        call nc_read(par%filename,par%name,vs%var(:,1,1),missing_value=mv, &
-                                start=[1,k_now],count=[par%dim(1),1])
-                    else 
                         ! 2D variable 
                         call nc_read(par%filename,par%name,vs%var(:,:,1),missing_value=mv)
-                    end if 
 
-                case(3)
+                    case(3)
 
-                    if (with_time) then 
-                        ! 2D variable plus time dimension 
-                        call nc_read(par%filename,par%name,vs%var(:,:,1),missing_value=mv, &
-                                start=[1,1,k_now],count=[par%dim(1),par%dim(2),1])
-                    else 
                         ! 3D variable 
                         call nc_read(par%filename,par%name,vs%var,missing_value=mv)
-                    end if 
 
-                case(4)
+                    case DEFAULT 
 
-                    if (with_time) then 
-                        ! 3D variable plus time dimension 
-                        call nc_read(par%filename,par%name,vs%var,missing_value=mv, &
-                                start=[1,1,1,k_now],count=[par%dim(1),par%dim(2),par%dim(3),1])
-                    else 
-                        ! 4D variable 
-                        write(*,*) "varslice_update:: Error: 4D variable without time dimension &
-                        &is not yet supported."
+                        write(*,*) "varslice_update:: ndim >= 4 with no time dimension is not allowed."
+                        write(*,*) "ndim = ", par%ndim 
                         stop 
-                    end if 
 
-                case DEFAULT 
+                end select
 
-                    write(*,*) "varslice_update:: ndim not allowed."
-                    write(*,*) "ndim = ", par%ndim 
-                    stop 
+            else 
+                ! Cases with a time dimension (more complicated)
 
-            end select
+                ! 1. Determine time indices
+                ! nt = size(vs%time)
+                ! do k_now = 1, nt 
+                !     if (vs%time(k_now) .eq. time_now) exit 
+                ! end do
+                call get_indices(k0,k1,vs%time,vs%time_range,trim(slice_method))
+
+
+                if (k0 .gt. 0 .and. k1 .gt. 0) then 
+                    ! Dimension range is available for loading, proceed 
+
+                    ! Get size of time dimension needed for loading
+                    nt_now = k1-k0+1
+
+                    ! write(*,*) "time: ", vs%time_range, k0, k1 
+                    ! write(*,*) "      ", vs%time(k0), vs%time(k1)
+
+                    select case(par%ndim)
+
+                        case(1)
+
+                            ! 0D (point) variable plus time dimension 
+                            call nc_read(par%filename,par%name,vs%var(1:nt_now,1,1),missing_value=mv, &
+                                    start=[k0],count=[nt_now])
+
+                        case(2)
+
+                            ! 1D variable plus time dimension 
+                            call nc_read(par%filename,par%name,vs%var(:,1:nt_now,1),missing_value=mv, &
+                                    start=[1,k0],count=[par%dim(1),nt_now])
+
+                        case(3)
+     
+                            ! 2D variable plus time dimension 
+                            call nc_read(par%filename,par%name,vs%var(:,:,1:nt_now),missing_value=mv, &
+                                    start=[1,1,k0],count=[par%dim(1),par%dim(2),nt_now])
+
+                        case(4)
+
+                            ! 3D variable plus time dimension 
+                            call nc_read(par%filename,par%name,vs%var,missing_value=mv, &
+                                    start=[1,1,1,k0],count=[par%dim(1),par%dim(2),par%dim(3),nt_now]) 
+
+                        case DEFAULT 
+
+                            write(*,*) "varslice_update:: ndim > 4 with time dimension not allowed."
+                            write(*,*) "ndim = ", par%ndim 
+                            stop 
+
+                    end select
+
+                else 
+                    ! Dimension range was not found, set variable to missing values 
+
+                    vs%var = mv 
+
+                end if
+
+            end if 
 
             ! Make sure crazy values have been set to missing (for safety)
             where (abs(vs%var) .ge. 1e10) vs%var = mv 
@@ -175,6 +246,82 @@ contains
         return 
 
     end subroutine varslice_update
+
+
+    subroutine get_indices(k0,k1,x,xrange,slice_method)
+        ! Get the indices k0 and k1 that 
+        ! correspond to the lower and upper bound 
+        ! range of xmin <= x <= xmax. 
+
+        ! Resulting indices should either match 
+        ! the range exactly, or bracket the range of interest 
+
+        ! Note: routine assumes xmin <= xmax! 
+
+        implicit none 
+
+        integer,  intent(OUT) :: k0 
+        integer,  intent(OUT) :: k1 
+        real(wp), intent(IN)  :: x(:) 
+        real(wp), intent(IN)  :: xrange(2)
+        character(len=*), intent(IN) :: slice_method 
+
+        ! Local variables 
+        integer  :: k, nk 
+        real(wp) :: xmin, xmax 
+
+        xmin = xrange(1)
+        xmax = xrange(2) 
+
+        nk = size(x,1) 
+
+        ! Get lower bound 
+        k0 = 1 
+        do k = 1, nk 
+            if (x(k) .gt. xmin) exit 
+            k0 = k 
+        end do 
+
+        if (xmax .eq. xmin) then 
+
+            k1 = k0 
+
+        else 
+
+            ! Get upper bound 
+            k1 = nk 
+            do k = nk, k0, -1 
+                if (x(k) .lt. xmax) exit 
+                k1 = k 
+            end do 
+
+        end if 
+
+        ! Make sure indices work for slice_method of choice
+        select case(trim(slice_method))
+
+            case("exact") 
+
+                if (x(k0) .ne. xmin) then 
+                    k0 = -1 
+                    k1 = -1 
+                end if 
+     
+
+            case("range","range_mean","range_sd","range_min","range_max") 
+
+                if (k0 .eq. size(x,1) .or. k1 .eq. 1) then 
+                    k0 = -1
+                    k1 = -1 
+                end if 
+
+            ! No default case
+        end select 
+
+        return 
+
+    end subroutine get_indices
+
 
     subroutine varslice_init_nml(vs,filename,group,domain,grid_name,verbose)
         ! Routine to load information related to a given 
