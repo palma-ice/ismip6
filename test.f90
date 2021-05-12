@@ -18,7 +18,7 @@ program test
     
 
 
-    type(ismip6_forcing_class) :: ismip6 
+    type(ismip6_forcing_class) :: ismp 
 
 
     real(wp) :: time_init, time_end, time, dt
@@ -29,20 +29,20 @@ program test
 
 
     ! Initialize variables inside of ismip6 object 
-    call ismip6_forcing_init(ismip6,"ismip6.nml","noresm_rcp85", &
+    call ismip6_forcing_init(ismp,"ismip6.nml","noresm_rcp85", &
                             domain="Antarctica",grid_name="ANT-32KM")
 
 
     ! Print some information for static variables
     write(*,*) "================" 
-    call print_var_range(ismip6%ts_ref%var, "ts_ref", mv) 
-    call print_var_range(ismip6%pr_ref%var, "pr_ref", mv) 
-    call print_var_range(ismip6%smb_ref%var,"smb_ref",mv) 
+    call print_var_range(ismp%ts_ref%var, "ts_ref", mv) 
+    call print_var_range(ismp%pr_ref%var, "pr_ref", mv) 
+    call print_var_range(ismp%smb_ref%var,"smb_ref",mv) 
     write(*,*) "----"
-    call print_var_range(ismip6%to_ref%var, "to_ref", mv) 
-    call print_var_range(ismip6%so_ref%var, "so_ref", mv) 
-    call print_var_range(ismip6%tf_ref%var, "tf_ref", mv) 
-    call print_var_range(ismip6%tf_cor%var, "tf_cor", mv) 
+    call print_var_range(ismp%to_ref%var, "to_ref", mv) 
+    call print_var_range(ismp%so_ref%var, "so_ref", mv) 
+    call print_var_range(ismp%tf_ref%var, "tf_ref", mv) 
+    call print_var_range(ismp%tf_cor%var, "tf_cor", mv) 
     write(*,*) 
 
     ! ======================================================================
@@ -58,18 +58,18 @@ program test
         time = time_init + (n-1)*dt
 
         ! Update ismip6 forcing to current time
-        call ismip6_forcing_update(ismip6,time)
+        call ismip6_forcing_update(ismp,time)
 
 
         ! Check data
         write(*,*) "================"
-        call print_var_range(ismip6%ts%var, "ts", mv,time) 
-        call print_var_range(ismip6%pr%var, "pr", mv,time) 
-        call print_var_range(ismip6%smb%var,"smb",mv,time) 
+        call print_var_range(ismp%ts%var, "ts", mv,time) 
+        call print_var_range(ismp%pr%var, "pr", mv,time) 
+        call print_var_range(ismp%smb%var,"smb",mv,time) 
         write(*,*) "----"
-        call print_var_range(ismip6%to%var, "to", mv,time) 
-        call print_var_range(ismip6%so%var, "so", mv,time) 
-        call print_var_range(ismip6%tf%var, "tf", mv,time) 
+        call print_var_range(ismp%to%var, "to", mv,time) 
+        call print_var_range(ismp%so%var, "so", mv,time) 
+        call print_var_range(ismp%tf%var, "tf", mv,time) 
         write(*,*) 
 
     end do
