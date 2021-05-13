@@ -240,4 +240,212 @@
     unit_offset     = 0.0 
 /
 
+&ismip6_out_z_srf
+    name            = "z_srf"
+    long_name       = "Ice sheet surface elevation"
+    var_type        = "ST"
+    standard_name   = "surface_altitude"
+    units_in        = "m"
+    units_out       = "m"
+    unit_scale      = 1.0 
+    unit_offset     = 0.0 
+/
 
+&ismip6_out_z_base
+    name            = "z_base"
+    long_name       = "Ice sheet base elevation"
+    var_type        = "ST"
+    standard_name   = "base_altitude"
+    units_in        = "m"
+    units_out       = "m"
+    unit_scale      = 1.0 
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_z_bed
+    name            = "z_bed"
+    long_name       = "Bedrock elevation"
+    var_type        = "ST"
+    standard_name   = "bedrock_altitude"
+    units_in        = "m"
+    units_out       = "m"
+    unit_scale      = 1.0 
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_q_geo
+    name            = "Q_geo"
+    long_name       = "Geothermal heat flux"
+    var_type        = "CST"
+    standard_name   = "upward_geothermal_heat_flux_at_ground_level"
+    units_in        = "mW m^−2"
+    units_out       = "W m^-2"
+    unit_scale      = 1e-3 
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_smb
+    name            = "smb"
+    long_name       = "Surface mass balance flux"
+    var_type        = "FL"
+    standard_name   = "land_ice_surface_specific_mass_balance_flux"
+    units_in        = "m i.e. yr^-1"
+    units_out       = "kg m^-2 s^-1"
+    unit_scale      = 2.885590725e-5    ! == 1/34654.9492 
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_bmb
+    name            = "bmb"
+    long_name       = "Basal mass balance flux"
+    var_type        = "FL"
+    standard_name   = "land_ice_basal_specific_mass_balance_flux"
+    units_in        = "m i.e. yr^-1"
+    units_out       = "kg m^-2 s^-1"
+    unit_scale      = 2.885590725e-5    ! == 1/34654.9492 
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_dh_dt
+    name            = "dh_dt"
+    long_name       = "Ice thickness imbalance"
+    var_type        = "FL"
+    standard_name   = "tendency_of_land_ice_thickness"
+    units_in        = "m yr^-1"
+    units_out       = "m s^-1"
+    unit_scale      =  3.170979e-8    ! == 1/31536000.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_ux_s
+    name            = "ux_s"
+    long_name       = "Surface velocity in x direction"
+    var_type        = "ST"
+    standard_name   = "land_ice_surface_x_velocity"
+    units_in        = "m yr^-1"
+    units_out       = "m s^-1"
+    unit_scale      =  3.170979e-8    ! == 1/31536000.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_uy_s
+    name            = "uy_s"
+    long_name       = "Surface velocity in y direction"
+    var_type        = "ST"
+    standard_name   = "land_ice_surface_y_velocity"
+    units_in        = "m yr^-1"
+    units_out       = "m s^-1"
+    unit_scale      =  3.170979e-8    ! == 1/31536000.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_uz_s
+    name            = "uz_s"
+    long_name       = "Surface velocity in z direction"
+    var_type        = "ST"
+    standard_name   = "land_ice_surface_upward_velocity"
+    units_in        = "m yr^-1"
+    units_out       = "m s^-1"
+    unit_scale      =  3.170979e-8    ! == 1/31536000.0
+    unit_offset     = 0.0 
+/
+
+
+&ismip6_out_ux_b
+    name            = "ux_b"
+    long_name       = "Basal velocity in x direction"
+    var_type        = "ST"
+    standard_name   = "land_ice_basal_x_velocity"
+    units_in        = "m yr^-1"
+    units_out       = "m s^-1"
+    unit_scale      =  3.170979e-8    ! == 1/31536000.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_uy_b
+    name            = "uy_b"
+    long_name       = "Basal velocity in y direction"
+    var_type        = "ST"
+    standard_name   = "land_ice_basal_y_velocity"
+    units_in        = "m yr^-1"
+    units_out       = "m s^-1"
+    unit_scale      =  3.170979e-8    ! == 1/31536000.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_uz_b
+    name            = "uz_b"
+    long_name       = "Basal velocity in z direction"
+    var_type        = "ST"
+    standard_name   = "land_ice_basal_upward_velocity"
+    units_in        = "m yr^-1"
+    units_out       = "m s^-1"
+    unit_scale      =  3.170979e-8    ! == 1/31536000.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_ux_bar
+    name            = "ux_bar"
+    long_name       = "Mean velocity in x direction"
+    var_type        = "ST"
+    standard_name   = "land_ice_vertical_mean_x_velocity"
+    units_in        = "m yr^-1"
+    units_out       = "m s^-1"
+    unit_scale      =  3.170979e-8    ! == 1/31536000.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_uy_bar
+    name            = "uy_bar"
+    long_name       = "Mean velocity in y direction"
+    var_type        = "ST"
+    standard_name   = "land_ice_vertical_mean_y_velocity"
+    units_in        = "m yr^-1"
+    units_out       = "m s^-1"
+    unit_scale      =  3.170979e-8    ! == 1/31536000.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_ts
+    name            = "ts"
+    long_name       = "Ice surface temperature"
+    var_type        = "ST"
+    standard_name   = "temperature_at_ground_level_in_snow_or_firn"
+    units_in        = "K"
+    units_out       = "K"
+    unit_scale      = 1.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_tb
+    name            = "tb"
+    long_name       = "Ice basal temperature"
+    var_type        = "ST"
+    standard_name   = "land_ice_basal_temperature"
+    units_in        = "K"
+    units_out       = "K"
+    unit_scale      = 1.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_tau_b
+    name            = "tau_b"
+    long_name       = "Magnitude of basal drag"
+    var_type        = "ST"
+    standard_name   = "magnitude_of_land_ice_basal_drag"
+    units_in        = "Pa"
+    units_out       = "Pa"
+    unit_scale      = 1.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_calv
+    name            = "calv"
+    long_name       = "Land ice calving flux"
+    var_type        = "ST"
+    standard_name   = "land_ice_specific_mass_flux_due_to_calving"
+    units_in        = "m i.e. yr^-1"
+    units_out       = "kg m^-2 s^-1"
+    unit_scale      = 2.885590725e-5    ! == 1/34654.9492 
+    unit_offset     = 0.0 
+/

@@ -351,23 +351,40 @@ contains
         allocate(ismp%vars(n_variables))
 
         ! Load individual variables by namelist group 
-        call ice_var_par_load(ismp%vars(1),filename,var_name="H_ice")
-
-
-        
+        call ice_var_par_load(ismp%vars(1), filename,var_name="H_ice")
+        call ice_var_par_load(ismp%vars(2), filename,var_name="z_srf")
+        call ice_var_par_load(ismp%vars(3), filename,var_name="z_base")
+        call ice_var_par_load(ismp%vars(4), filename,var_name="z_bed")
+        call ice_var_par_load(ismp%vars(5), filename,var_name="q_geo")
+        call ice_var_par_load(ismp%vars(6), filename,var_name="smb")
+        call ice_var_par_load(ismp%vars(7), filename,var_name="bmb")
+        call ice_var_par_load(ismp%vars(8), filename,var_name="dh_dt")
+        call ice_var_par_load(ismp%vars(9), filename,var_name="ux_s")
+        call ice_var_par_load(ismp%vars(10),filename,var_name="uy_s")
+        call ice_var_par_load(ismp%vars(11),filename,var_name="uz_s")
+        call ice_var_par_load(ismp%vars(12),filename,var_name="ux_b")
+        call ice_var_par_load(ismp%vars(13),filename,var_name="uy_b")
+        call ice_var_par_load(ismp%vars(14),filename,var_name="uz_b")
+        call ice_var_par_load(ismp%vars(15),filename,var_name="ux_bar")
+        call ice_var_par_load(ismp%vars(16),filename,var_name="uy_bar")
+        call ice_var_par_load(ismp%vars(17),filename,var_name="ts")
+        call ice_var_par_load(ismp%vars(18),filename,var_name="tb")
+        call ice_var_par_load(ismp%vars(19),filename,var_name="tau_b")
+        call ice_var_par_load(ismp%vars(20),filename,var_name="calv")
+         
 if (.TRUE.) then 
 
         ! === Print summary =========
 
-        write(*,"(a40,a8,a50,a12)") &
+        write(*,"(a40,a8,a50,a15)") &
                                 "Variable name",    &
                                 "Type",             &
                                 "Standard name",    &
                                 "Unit"
         
-        do n = 1, 1 
+        do n = 1, 20 
             v = ismp%vars(n)
-            write(*,"(a40,a8,a50,a12)") &
+            write(*,"(a40,a8,a50,a15)") &
                                 trim(v%long_name),      &
                                 trim(v%var_type),       &
                                 trim(v%standard_name),  &
