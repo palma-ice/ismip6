@@ -2,8 +2,9 @@ module ismip6
     ! This module contains routines that help with performing the ISMIP6 suite
     ! of experiments. 
     
-    use varslice 
+    use nml  
     use ncio 
+    use varslice
 
     implicit none 
 
@@ -67,9 +68,21 @@ module ismip6
         
     end type
 
+    type ismip6_ice_var_class
+        character(len=56)  :: name 
+        character(len=128) :: long_name
+        character(len=12)  :: var_type
+        character(len=128) :: standard_name 
+        character(len=128) :: units_in
+        character(len=128) :: units_out
+        real(wp) :: unit_scale 
+        real(wp) :: unit_offset
+    end type
+
+        
     ! Class for holding ice output for writing to standard formats...
     type ismip6_ice_class
-
+        type(ismip6_ice_var_class), allocatable :: vars(:)
     end type 
 
 
@@ -78,6 +91,9 @@ module ismip6
     public :: ismip6_ice_class
     public :: ismip6_forcing_init
     public :: ismip6_forcing_update
+
+    public :: ismip6_write_init
+    public :: ismip6_write_step
 
 contains
     
@@ -317,6 +333,81 @@ contains
 
     ! === ISMIP6 OUTPUT ROUTINES ==========
 
+    subroutine ismip6_load_ice_var_info(ismp,filename)
+
+        implicit none 
+
+        type(ismip6_ice_class), intent(OUT) :: ismp 
+        character(len=*),       intent(IN)  :: filename 
+
+        ! Local variables
+        integer :: n  
+        integer, parameter :: n_variables = 32
+
+        type(ismip6_ice_var_class) :: v 
+
+        ! First initialize ismp object to hold variable meta data 
+        if (allocated(ismp%vars)) deallocate(ismp%vars)
+        allocate(ismp%vars(n_variables))
+
+        ! Load individual variables by namelist group 
+        call ice_var_par_load(ismp%vars(1),filename,var_name="H_ice")
+
+
+        
+if (.TRUE.) then 
+
+        ! === Print summary =========
+
+        write(*,"(a40,a8,a50,a12)") &
+                                "Variable name",    &
+                                "Type",             &
+                                "Standard name",    &
+                                "Unit"
+        
+        do n = 1, 1 
+            v = ismp%vars(n)
+            write(*,"(a40,a8,a50,a12)") &
+                                trim(v%long_name),      &
+                                trim(v%var_type),       &
+                                trim(v%standard_name),  &
+                                trim(v%units_out) 
+        end do 
+
+
+end if 
+
+        return 
+
+    end subroutine ismip6_load_ice_var_info
+
+    subroutine ice_var_par_load(ismpv,filename,var_name)
+        ! Load parmaeters associated with a given ice variable
+
+        implicit none 
+
+        type(ismip6_ice_var_class), intent(OUT) :: ismpv 
+        character(len=*),           intent(IN)  :: filename 
+        character(len=*),           intent(IN)  :: var_name
+
+        ! Local variables 
+        character(len=56) :: group 
+
+        group = "ismip6_out_"//trim(var_name)
+
+        call nml_read(filename,group,"name",            ismpv%name)
+        call nml_read(filename,group,"long_name",       ismpv%long_name)
+        call nml_read(filename,group,"var_type",        ismpv%var_type)
+        call nml_read(filename,group,"standard_name",   ismpv%standard_name)
+        call nml_read(filename,group,"units_in",        ismpv%units_in)
+        call nml_read(filename,group,"units_out",       ismpv%units_out)
+        call nml_read(filename,group,"unit_scale",      ismpv%unit_scale)
+        call nml_read(filename,group,"unit_offset",     ismpv%unit_offset)
+
+        return 
+
+    end subroutine ice_var_par_load
+
     subroutine ismip6_write_init(filename,xc,yc,time,lon,lat,area,map_name,lambda,phi)
 
         implicit none 
@@ -371,5 +462,21 @@ contains
 
     end subroutine ismip6_write_init
 
+
+    subroutine ismip6_write_step(filename,file_nml)
+
+        implicit none 
+
+        character(len=*),   intent(IN) :: filename
+        character(len=*),   intent(IN) :: file_nml 
+
+        ! Local variables 
+        type(ismip6_ice_class) :: ismp 
+
+        call ismip6_load_ice_var_info(ismp,file_nml)
+
+        return
+
+    end subroutine ismip6_write_step
 
 end module ismip6

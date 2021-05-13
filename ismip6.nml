@@ -220,3 +220,24 @@
     with_time   = True 
     time_par    = 1995, 2100, 1
 /
+
+
+
+! =====================================================
+!
+! ISMIP6 output variable list
+!
+! =====================================================
+
+&ismip6_out_H_ice
+    name            = "H_ice"
+    long_name       = "Ice sheet thickness"
+    var_type        = "ST"
+    standard_name   = "land_ice_thickness"
+    units_in        = "m"
+    units_out       = "m"
+    unit_scale      = 1.0 
+    unit_offset     = 0.0 
+/
+
+

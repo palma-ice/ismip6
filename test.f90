@@ -24,9 +24,14 @@ program test
     real(wp) :: time_init, time_end, time, dt
     integer  :: n, k
 
+    ! === Testing output writing 
+
+    call ismip6_write_step(filename="icesheet_ismip6.nc",file_nml="ismip6.nml")
+
+
+    stop 
+
     ! ======================================================================
-
-
 
     ! Initialize variables inside of ismip6 object 
     call ismip6_forcing_init(ismp,"ismip6.nml","noresm_rcp85", &
