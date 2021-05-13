@@ -26,8 +26,8 @@ program test
 
     ! === Testing output writing ===
 
-    ! call ismip6_write_step(filename="icesheet_ismip6.nc",file_nml="ismip6.nml",time=0.0_wp)
-    ! stop 
+    call ismip6_write_step(filename="icesheet_ismip6.nc",file_nml="ismip6.nml",time=0.0_wp)
+    stop 
 
     ! ======================================================================
 

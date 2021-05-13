@@ -441,7 +441,7 @@ end if
 
         ! Local variables
         integer :: n  
-        integer, parameter :: n_variables = 32
+        integer, parameter :: n_variables = 38
 
         type(ismip6_ice_var_class) :: v 
 
@@ -450,44 +450,51 @@ end if
         allocate(ismp%vars(n_variables))
 
         ! Load individual variables by namelist group 
-        call ice_var_par_load(ismp%vars(1), filename,var_name="H_ice")
-        call ice_var_par_load(ismp%vars(2), filename,var_name="z_srf")
-        call ice_var_par_load(ismp%vars(3), filename,var_name="z_base")
-        call ice_var_par_load(ismp%vars(4), filename,var_name="z_bed")
-        call ice_var_par_load(ismp%vars(5), filename,var_name="q_geo")
-        call ice_var_par_load(ismp%vars(6), filename,var_name="smb")
-        call ice_var_par_load(ismp%vars(7), filename,var_name="bmb")
-        call ice_var_par_load(ismp%vars(8), filename,var_name="dh_dt")
-        call ice_var_par_load(ismp%vars(9), filename,var_name="ux_s")
-        call ice_var_par_load(ismp%vars(10),filename,var_name="uy_s")
-        call ice_var_par_load(ismp%vars(11),filename,var_name="uz_s")
-        call ice_var_par_load(ismp%vars(12),filename,var_name="ux_b")
-        call ice_var_par_load(ismp%vars(13),filename,var_name="uy_b")
-        call ice_var_par_load(ismp%vars(14),filename,var_name="uz_b")
-        call ice_var_par_load(ismp%vars(15),filename,var_name="ux_bar")
-        call ice_var_par_load(ismp%vars(16),filename,var_name="uy_bar")
-        call ice_var_par_load(ismp%vars(17),filename,var_name="ts")
-        call ice_var_par_load(ismp%vars(18),filename,var_name="tb")
-        call ice_var_par_load(ismp%vars(19),filename,var_name="tau_b")
-        call ice_var_par_load(ismp%vars(20),filename,var_name="calv")
-        call ice_var_par_load(ismp%vars(21),filename,var_name="q_gl")
-        call ice_var_par_load(ismp%vars(22),filename,var_name="f_ice")
-        call ice_var_par_load(ismp%vars(23),filename,var_name="f_grnd")
-        call ice_var_par_load(ismp%vars(24),filename,var_name="f_flt")
-        call ice_var_par_load(ismp%vars(25),filename,var_name="m_ice")
-        call ice_var_par_load(ismp%vars(26),filename,var_name="m_af")
-        call ice_var_par_load(ismp%vars(27),filename,var_name="a_grnd")
-        call ice_var_par_load(ismp%vars(28),filename,var_name="a_flt")
-        call ice_var_par_load(ismp%vars(29),filename,var_name="smb_tot")
-        call ice_var_par_load(ismp%vars(30),filename,var_name="bmb_tot")
-        call ice_var_par_load(ismp%vars(31),filename,var_name="calv_tot")
-        call ice_var_par_load(ismp%vars(32),filename,var_name="q_gl_tot")
+        call ice_var_par_load(ismp%vars(1), filename,var_name="lithk")
+        call ice_var_par_load(ismp%vars(2), filename,var_name="orog")
+        call ice_var_par_load(ismp%vars(3), filename,var_name="base")
+        call ice_var_par_load(ismp%vars(4), filename,var_name="topg")
+        call ice_var_par_load(ismp%vars(5), filename,var_name="hfgeoubed")
+        call ice_var_par_load(ismp%vars(6), filename,var_name="acabf")
+        call ice_var_par_load(ismp%vars(7), filename,var_name="libmassbfgr")
+        call ice_var_par_load(ismp%vars(8), filename,var_name="libmassbffl")
+        call ice_var_par_load(ismp%vars(9), filename,var_name="dlithkdt")
+        call ice_var_par_load(ismp%vars(10),filename,var_name="xvelsurf")
+        call ice_var_par_load(ismp%vars(11),filename,var_name="yvelsurf")
+        call ice_var_par_load(ismp%vars(12),filename,var_name="zvelsurf")
+        call ice_var_par_load(ismp%vars(13),filename,var_name="xvelbase")
+        call ice_var_par_load(ismp%vars(14),filename,var_name="yvelbase")
+        call ice_var_par_load(ismp%vars(15),filename,var_name="zvelbase")
+        call ice_var_par_load(ismp%vars(16),filename,var_name="xvelmean")
+        call ice_var_par_load(ismp%vars(17),filename,var_name="yvelmean")
+        call ice_var_par_load(ismp%vars(18),filename,var_name="litemptop")
+        call ice_var_par_load(ismp%vars(19),filename,var_name="litempbotgr")
+        call ice_var_par_load(ismp%vars(20),filename,var_name="litempbotfl")
+        call ice_var_par_load(ismp%vars(21),filename,var_name="strbasemag")
+        call ice_var_par_load(ismp%vars(22),filename,var_name="licalvf")
+        call ice_var_par_load(ismp%vars(23),filename,var_name="lifmassbf")
+        call ice_var_par_load(ismp%vars(24),filename,var_name="lifmassbf")
+        call ice_var_par_load(ismp%vars(25),filename,var_name="ligroundf")
+        call ice_var_par_load(ismp%vars(26),filename,var_name="sftgif")
+        call ice_var_par_load(ismp%vars(27),filename,var_name="sftgrf")
+        call ice_var_par_load(ismp%vars(28),filename,var_name="sftflf")
+
+        call ice_var_par_load(ismp%vars(29),filename,var_name="lim")
+        call ice_var_par_load(ismp%vars(30),filename,var_name="limnsw")
+        call ice_var_par_load(ismp%vars(31),filename,var_name="iareagr")
+        call ice_var_par_load(ismp%vars(32),filename,var_name="iareafl")
+        call ice_var_par_load(ismp%vars(33),filename,var_name="tendacabf")
+        call ice_var_par_load(ismp%vars(34),filename,var_name="tendlibmassbf")
+        call ice_var_par_load(ismp%vars(35),filename,var_name="tendlibmassbffl")
+        call ice_var_par_load(ismp%vars(36),filename,var_name="tendlicalvf")
+        call ice_var_par_load(ismp%vars(37),filename,var_name="tendlifmassbf")
+        call ice_var_par_load(ismp%vars(38),filename,var_name="tendligroundf")
 
         if (verbose) then 
 
             ! === Print summary =========
 
-            write(*,"(a40,a8,a50,a15)") &
+            write(*,"(a40,a8,a65,a15)") &
                                     "Variable name",    &
                                     "Type",             &
                                     "Standard name",    &
@@ -495,7 +502,7 @@ end if
             
             do n = 1, n_variables 
                 v = ismp%vars(n)
-                write(*,"(a40,a8,a50,a15)") &
+                write(*,"(a40,a8,a65,a15)") &
                                     trim(v%long_name),      &
                                     trim(v%var_type),       &
                                     trim(v%standard_name),  &

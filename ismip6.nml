@@ -229,8 +229,8 @@
 !
 ! =====================================================
 
-&ismip6_out_H_ice
-    name            = "H_ice"
+&ismip6_out_lithk
+    name            = "lithk"
     long_name       = "Ice sheet thickness"
     var_type        = "ST"
     standard_name   = "land_ice_thickness"
@@ -240,8 +240,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_z_srf
-    name            = "z_srf"
+&ismip6_out_orog
+    name            = "orog"
     long_name       = "Ice sheet surface elevation"
     var_type        = "ST"
     standard_name   = "surface_altitude"
@@ -251,8 +251,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_z_base
-    name            = "z_base"
+&ismip6_out_base
+    name            = "base"
     long_name       = "Ice sheet base elevation"
     var_type        = "ST"
     standard_name   = "base_altitude"
@@ -262,8 +262,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_z_bed
-    name            = "z_bed"
+&ismip6_out_topg
+    name            = "topg"
     long_name       = "Bedrock elevation"
     var_type        = "ST"
     standard_name   = "bedrock_altitude"
@@ -273,8 +273,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_q_geo
-    name            = "Q_geo"
+&ismip6_out_hfgeoubed
+    name            = "hfgeoubed"
     long_name       = "Geothermal heat flux"
     var_type        = "CST"
     standard_name   = "upward_geothermal_heat_flux_at_ground_level"
@@ -284,8 +284,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_smb
-    name            = "smb"
+&ismip6_out_acabf
+    name            = "acabf"
     long_name       = "Surface mass balance flux"
     var_type        = "FL"
     standard_name   = "land_ice_surface_specific_mass_balance_flux"
@@ -295,9 +295,9 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_bmb
-    name            = "bmb"
-    long_name       = "Basal mass balance flux"
+&ismip6_out_libmassbfgr
+    name            = "libmassbfgr"
+    long_name       = "Basal mass balance flux beneath grounded ice"
     var_type        = "FL"
     standard_name   = "land_ice_basal_specific_mass_balance_flux"
     units_in        = "m i.e. yr^-1"
@@ -306,8 +306,20 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_dh_dt
-    name            = "dh_dt"
+&ismip6_out_libmassbffl
+    name            = "libmassbffl"
+    long_name       = "Basal mass balance flux beneath floating ice"
+    var_type        = "FL"
+    standard_name   = "land_ice_basal_specific_mass_balance_flux"
+    units_in        = "m i.e. yr^-1"
+    units_out       = "kg m^-2 s^-1"
+    unit_scale      = 2.885590725e-5    ! == 1/34654.9492 
+    unit_offset     = 0.0 
+/
+
+
+&ismip6_out_dlithkdt
+    name            = "dlithkdt"
     long_name       = "Ice thickness imbalance"
     var_type        = "FL"
     standard_name   = "tendency_of_land_ice_thickness"
@@ -317,8 +329,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_ux_s
-    name            = "ux_s"
+&ismip6_out_xvelsurf
+    name            = "xvelsurf"
     long_name       = "Surface velocity in x direction"
     var_type        = "ST"
     standard_name   = "land_ice_surface_x_velocity"
@@ -328,8 +340,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_uy_s
-    name            = "uy_s"
+&ismip6_out_yvelsurf
+    name            = "yvelsurf"
     long_name       = "Surface velocity in y direction"
     var_type        = "ST"
     standard_name   = "land_ice_surface_y_velocity"
@@ -339,8 +351,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_uz_s
-    name            = "uz_s"
+&ismip6_out_zvelsurf
+    name            = "zvelsurf"
     long_name       = "Surface velocity in z direction"
     var_type        = "ST"
     standard_name   = "land_ice_surface_upward_velocity"
@@ -351,8 +363,8 @@
 /
 
 
-&ismip6_out_ux_b
-    name            = "ux_b"
+&ismip6_out_xvelbase
+    name            = "xvelbase"
     long_name       = "Basal velocity in x direction"
     var_type        = "ST"
     standard_name   = "land_ice_basal_x_velocity"
@@ -362,8 +374,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_uy_b
-    name            = "uy_b"
+&ismip6_out_yvelbase
+    name            = "yvelbase"
     long_name       = "Basal velocity in y direction"
     var_type        = "ST"
     standard_name   = "land_ice_basal_y_velocity"
@@ -373,8 +385,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_uz_b
-    name            = "uz_b"
+&ismip6_out_zvelbase
+    name            = "zvelbase"
     long_name       = "Basal velocity in z direction"
     var_type        = "ST"
     standard_name   = "land_ice_basal_upward_velocity"
@@ -384,8 +396,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_ux_bar
-    name            = "ux_bar"
+&ismip6_out_xvelmean
+    name            = "xvelmean"
     long_name       = "Mean velocity in x direction"
     var_type        = "ST"
     standard_name   = "land_ice_vertical_mean_x_velocity"
@@ -395,8 +407,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_uy_bar
-    name            = "uy_bar"
+&ismip6_out_yvelmean
+    name            = "yvelmean"
     long_name       = "Mean velocity in y direction"
     var_type        = "ST"
     standard_name   = "land_ice_vertical_mean_y_velocity"
@@ -406,41 +418,52 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_ts
-    name            = "ts"
+&ismip6_out_litemptop
+    name            = "litemptop"
     long_name       = "Ice surface temperature"
     var_type        = "ST"
-    standard_name   = "temperature_at_ground_level_in_snow_or_firn"
+    standard_name   = "temperature_at_top_of_ice_sheet_model"
     units_in        = "K"
     units_out       = "K"
     unit_scale      = 1.0
     unit_offset     = 0.0 
 /
 
-&ismip6_out_tb
-    name            = "tb"
-    long_name       = "Ice basal temperature"
+&ismip6_out_litempbotgr
+    name            = "litempbotgr"
+    long_name       = "Basal temperature beneath grounded ice sheet"
     var_type        = "ST"
-    standard_name   = "land_ice_basal_temperature"
+    standard_name   = "temperature_at_base_of_ice_sheet_model"
     units_in        = "K"
     units_out       = "K"
     unit_scale      = 1.0
     unit_offset     = 0.0 
 /
 
-&ismip6_out_tau_b
-    name            = "tau_b"
+&ismip6_out_litempbotfl
+    name            = "litempbotfl"
+    long_name       = "Basal temperature beneath floating ice sheet"
+    var_type        = "ST"
+    standard_name   = "temperature_at_base_of_ice_sheet_model"
+    units_in        = "K"
+    units_out       = "K"
+    unit_scale      = 1.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_strbasemag
+    name            = "strbasemag"
     long_name       = "Magnitude of basal drag"
     var_type        = "ST"
-    standard_name   = "magnitude_of_land_ice_basal_drag"
+    standard_name   = "land_ice_basal_drag"
     units_in        = "Pa"
     units_out       = "Pa"
     unit_scale      = 1.0
     unit_offset     = 0.0 
 /
 
-&ismip6_out_calv
-    name            = "calv"
+&ismip6_out_licalvf
+    name            = "licalvf"
     long_name       = "Land ice calving flux"
     var_type        = "FL"
     standard_name   = "land_ice_specific_mass_flux_due_to_calving"
@@ -450,19 +473,29 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_q_gl
-    name            = "q_gl"
+&ismip6_out_lifmassbf
+    name            = "lifmassbf"
+    long_name       = "Ice front melt and calving flux"
+    var_type        = "FL"
+    standard_name   = "land_ice_specific_mass_flux_due_to_calving_and_ice_front_melting"
+    units_in        = "m i.e. yr^-1"
+    units_out       = "kg m^-2 s^-1"
+    unit_scale      = 2.885590725e-5    ! == 1/34654.9492 
+    unit_offset     = 0.0 
+/
+&ismip6_out_ligroundf
+    name            = "ligroundf"
     long_name       = "Grounding line flux"
     var_type        = "FL"
-    standard_name   = "land_ice_specific_mass_flux_due_at_grounding_line"
+    standard_name   = "land_ice_specific_mass_flux_at_grounding_line"
     units_in        = "m i.e. yr^-1"
     units_out       = "kg m^-2 s^-1"
     unit_scale      = 2.885590725e-5    ! == 1/34654.9492 
     unit_offset     = 0.0 
 /
 
-&ismip6_out_f_ice
-    name            = "f_ice"
+&ismip6_out_sftgif
+    name            = "sftgif"
     long_name       = "Land ice area fraction"
     var_type        = "ST"
     standard_name   = "land_ice_area_fraction"
@@ -472,8 +505,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_f_grnd
-    name            = "f_grnd"
+&ismip6_out_sftgrf
+    name            = "sftgrf"
     long_name       = "Grounded ice sheet area fraction"
     var_type        = "ST"
     standard_name   = "grounded_ice_sheet_area_fraction"
@@ -483,19 +516,19 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_f_flt
-    name            = "f_flt"
+&ismip6_out_sftflf
+    name            = "sftflf"
     long_name       = "Floating ice sheet area fraction"
     var_type        = "ST"
-    standard_name   = "floating_ice_sheet_area_fraction"
+    standard_name   = "floating_ice_shelf_area_fraction"
     units_in        = "1"
     units_out       = "1"
     unit_scale      = 1.0
     unit_offset     = 0.0 
 /
 
-&ismip6_out_m_ice
-    name            = "m_ice"
+&ismip6_out_lim
+    name            = "lim"
     long_name       = "Total ice sheet mass"
     var_type        = "ST"
     standard_name   = "land_ice_mass"
@@ -505,8 +538,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_m_af
-    name            = "m_af"
+&ismip6_out_limnsw
+    name            = "limnsw"
     long_name       = "Total ice sheet mass above flotation"
     var_type        = "ST"
     standard_name   = "land_ice_mass_not_displacing_sea_water"
@@ -516,20 +549,20 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_a_grnd
-    name            = "a_grnd"
-    long_name       = "Area covered by grounded ice"
+&ismip6_out_iareagr
+    name            = "iareagr"
+    long_name       = "Grounded ice area"
     var_type        = "ST"
-    standard_name   = "grounded_land_ice_area"
+    standard_name   = "grounded_ice_sheet_area"
     units_in        = "m^2"
     units_out       = "m^2"
     unit_scale      = 1.0
     unit_offset     = 0.0 
 /
 
-&ismip6_out_a_flt
-    name            = "a_flt"
-    long_name       = "Area covered by floating ice"
+&ismip6_out_iareafl
+    name            = "iareafl"
+    long_name       = "Floating ice area"
     var_type        = "ST"
     standard_name   = "floating_ice_shelf_area"
     units_in        = "m^2"
@@ -538,8 +571,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_smb_tot
-    name            = "smb_tot"
+&ismip6_out_tendacabf
+    name            = "tendacabf"
     long_name       = "Total SMB flux"
     var_type        = "FL"
     standard_name   = "tendency_of_land_ice_mass_due_to_surface_mass_balance"
@@ -549,8 +582,8 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_bmb_tot
-    name            = "bmb_tot"
+&ismip6_out_tendlibmassbf
+    name            = "tendlibmassbf"
     long_name       = "Total BMB flux"
     var_type        = "FL"
     standard_name   = "tendency_of_land_ice_mass_due_to_basal_mass_balance"
@@ -560,8 +593,19 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_calv_tot
-    name            = "calv_tot"
+&ismip6_out_tendlibmassbffl
+    name            = "tendlibmassbffl"
+    long_name       = "Total BMB flux beneath floating ice"
+    var_type        = "FL"
+    standard_name   = "tendency_of_land_ice_mass_due_to_basal_mass_balance"
+    units_in        = "kg yr^-1"
+    units_out       = "kg s^-1"
+    unit_scale      = 3.170979e-8    ! == 1/31536000.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_tendlicalvf
+    name            = "tendlicalvf"
     long_name       = "Total calving flux"
     var_type        = "FL"
     standard_name   = "tendency_of_land_ice_mass_due_to_calving"
@@ -571,8 +615,18 @@
     unit_offset     = 0.0 
 /
 
-&ismip6_out_q_gl_tot
-    name            = "q_gl_tot"
+&ismip6_out_tendlifmassbf
+    name            = "tendlifmassbf"
+    long_name       = "Total calving and ice front melting flux"
+    var_type        = "FL"
+    standard_name   = "tendency_of_land_ice_mass_due_to_calving_and_ice_front_melting"
+    units_in        = "kg yr^-1"
+    units_out       = "kg s^-1"
+    unit_scale      = 3.170979e-8    ! == 1/31536000.0
+    unit_offset     = 0.0 
+/
+&ismip6_out_tendligroundf
+    name            = "tendligroundf"
     long_name       = "Total grounding line flux"
     var_type        = "FL"
     standard_name   = "tendency_of_grounded_ice_mass"
