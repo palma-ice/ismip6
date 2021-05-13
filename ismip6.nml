@@ -442,10 +442,142 @@
 &ismip6_out_calv
     name            = "calv"
     long_name       = "Land ice calving flux"
-    var_type        = "ST"
+    var_type        = "FL"
     standard_name   = "land_ice_specific_mass_flux_due_to_calving"
     units_in        = "m i.e. yr^-1"
     units_out       = "kg m^-2 s^-1"
     unit_scale      = 2.885590725e-5    ! == 1/34654.9492 
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_q_gl
+    name            = "q_gl"
+    long_name       = "Grounding line flux"
+    var_type        = "FL"
+    standard_name   = "land_ice_specific_mass_flux_due_at_grounding_line"
+    units_in        = "m i.e. yr^-1"
+    units_out       = "kg m^-2 s^-1"
+    unit_scale      = 2.885590725e-5    ! == 1/34654.9492 
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_f_ice
+    name            = "f_ice"
+    long_name       = "Land ice area fraction"
+    var_type        = "ST"
+    standard_name   = "land_ice_area_fraction"
+    units_in        = "1"
+    units_out       = "1"
+    unit_scale      = 1.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_f_grnd
+    name            = "f_grnd"
+    long_name       = "Grounded ice sheet area fraction"
+    var_type        = "ST"
+    standard_name   = "grounded_ice_sheet_area_fraction"
+    units_in        = "1"
+    units_out       = "1"
+    unit_scale      = 1.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_f_flt
+    name            = "f_flt"
+    long_name       = "Floating ice sheet area fraction"
+    var_type        = "ST"
+    standard_name   = "floating_ice_sheet_area_fraction"
+    units_in        = "1"
+    units_out       = "1"
+    unit_scale      = 1.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_m_ice
+    name            = "m_ice"
+    long_name       = "Total ice sheet mass"
+    var_type        = "ST"
+    standard_name   = "land_ice_mass"
+    units_in        = "kg"
+    units_out       = "kg"
+    unit_scale      = 1.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_m_af
+    name            = "m_af"
+    long_name       = "Total ice sheet mass above flotation"
+    var_type        = "ST"
+    standard_name   = "land_ice_mass_not_displacing_sea_water"
+    units_in        = "kg"
+    units_out       = "kg"
+    unit_scale      = 1.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_a_grnd
+    name            = "a_grnd"
+    long_name       = "Area covered by grounded ice"
+    var_type        = "ST"
+    standard_name   = "grounded_land_ice_area"
+    units_in        = "m^2"
+    units_out       = "m^2"
+    unit_scale      = 1.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_a_flt
+    name            = "a_flt"
+    long_name       = "Area covered by floating ice"
+    var_type        = "ST"
+    standard_name   = "floating_ice_shelf_area"
+    units_in        = "m^2"
+    units_out       = "m^2"
+    unit_scale      = 1.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_smb_tot
+    name            = "smb_tot"
+    long_name       = "Total SMB flux"
+    var_type        = "FL"
+    standard_name   = "tendency_of_land_ice_mass_due_to_surface_mass_balance"
+    units_in        = "kg yr^-1"
+    units_out       = "kg s^-1"
+    unit_scale      = 3.170979e-8    ! == 1/31536000.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_bmb_tot
+    name            = "bmb_tot"
+    long_name       = "Total BMB flux"
+    var_type        = "FL"
+    standard_name   = "tendency_of_land_ice_mass_due_to_basal_mass_balance"
+    units_in        = "kg yr^-1"
+    units_out       = "kg s^-1"
+    unit_scale      = 3.170979e-8    ! == 1/31536000.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_calv_tot
+    name            = "calv_tot"
+    long_name       = "Total calving flux"
+    var_type        = "FL"
+    standard_name   = "tendency_of_land_ice_mass_due_to_calving"
+    units_in        = "kg yr^-1"
+    units_out       = "kg s^-1"
+    unit_scale      = 3.170979e-8    ! == 1/31536000.0
+    unit_offset     = 0.0 
+/
+
+&ismip6_out_q_gl_tot
+    name            = "q_gl_tot"
+    long_name       = "Total grounding line flux"
+    var_type        = "FL"
+    standard_name   = "tendency_of_grounded_ice_mass"
+    units_in        = "kg yr^-1"
+    units_out       = "kg s^-1"
+    unit_scale      = 3.170979e-8    ! == 1/31536000.0
     unit_offset     = 0.0 
 /

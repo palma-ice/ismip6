@@ -371,7 +371,19 @@ contains
         call ice_var_par_load(ismp%vars(18),filename,var_name="tb")
         call ice_var_par_load(ismp%vars(19),filename,var_name="tau_b")
         call ice_var_par_load(ismp%vars(20),filename,var_name="calv")
-         
+        call ice_var_par_load(ismp%vars(21),filename,var_name="q_gl")
+        call ice_var_par_load(ismp%vars(22),filename,var_name="f_ice")
+        call ice_var_par_load(ismp%vars(23),filename,var_name="f_grnd")
+        call ice_var_par_load(ismp%vars(24),filename,var_name="f_flt")
+        call ice_var_par_load(ismp%vars(25),filename,var_name="m_ice")
+        call ice_var_par_load(ismp%vars(26),filename,var_name="m_af")
+        call ice_var_par_load(ismp%vars(27),filename,var_name="a_grnd")
+        call ice_var_par_load(ismp%vars(28),filename,var_name="a_flt")
+        call ice_var_par_load(ismp%vars(29),filename,var_name="smb_tot")
+        call ice_var_par_load(ismp%vars(30),filename,var_name="bmb_tot")
+        call ice_var_par_load(ismp%vars(31),filename,var_name="calv_tot")
+        call ice_var_par_load(ismp%vars(32),filename,var_name="q_gl_tot")
+
 if (.TRUE.) then 
 
         ! === Print summary =========
@@ -382,7 +394,7 @@ if (.TRUE.) then
                                 "Standard name",    &
                                 "Unit"
         
-        do n = 1, 20 
+        do n = 1, n_variables 
             v = ismp%vars(n)
             write(*,"(a40,a8,a50,a15)") &
                                 trim(v%long_name),      &
