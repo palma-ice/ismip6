@@ -24,12 +24,10 @@ program test
     real(wp) :: time_init, time_end, time, dt
     integer  :: n, k
 
-    ! === Testing output writing 
+    ! === Testing output writing ===
 
-    call ismip6_write_step(filename="icesheet_ismip6.nc",file_nml="ismip6.nml")
-
-
-    stop 
+    ! call ismip6_write_step(filename="icesheet_ismip6.nc",file_nml="ismip6.nml",time=0.0_wp)
+    ! stop 
 
     ! ======================================================================
 

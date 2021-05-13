@@ -333,110 +333,6 @@ contains
 
     ! === ISMIP6 OUTPUT ROUTINES ==========
 
-    subroutine ismip6_load_ice_var_info(ismp,filename)
-
-        implicit none 
-
-        type(ismip6_ice_class), intent(OUT) :: ismp 
-        character(len=*),       intent(IN)  :: filename 
-
-        ! Local variables
-        integer :: n  
-        integer, parameter :: n_variables = 32
-
-        type(ismip6_ice_var_class) :: v 
-
-        ! First initialize ismp object to hold variable meta data 
-        if (allocated(ismp%vars)) deallocate(ismp%vars)
-        allocate(ismp%vars(n_variables))
-
-        ! Load individual variables by namelist group 
-        call ice_var_par_load(ismp%vars(1), filename,var_name="H_ice")
-        call ice_var_par_load(ismp%vars(2), filename,var_name="z_srf")
-        call ice_var_par_load(ismp%vars(3), filename,var_name="z_base")
-        call ice_var_par_load(ismp%vars(4), filename,var_name="z_bed")
-        call ice_var_par_load(ismp%vars(5), filename,var_name="q_geo")
-        call ice_var_par_load(ismp%vars(6), filename,var_name="smb")
-        call ice_var_par_load(ismp%vars(7), filename,var_name="bmb")
-        call ice_var_par_load(ismp%vars(8), filename,var_name="dh_dt")
-        call ice_var_par_load(ismp%vars(9), filename,var_name="ux_s")
-        call ice_var_par_load(ismp%vars(10),filename,var_name="uy_s")
-        call ice_var_par_load(ismp%vars(11),filename,var_name="uz_s")
-        call ice_var_par_load(ismp%vars(12),filename,var_name="ux_b")
-        call ice_var_par_load(ismp%vars(13),filename,var_name="uy_b")
-        call ice_var_par_load(ismp%vars(14),filename,var_name="uz_b")
-        call ice_var_par_load(ismp%vars(15),filename,var_name="ux_bar")
-        call ice_var_par_load(ismp%vars(16),filename,var_name="uy_bar")
-        call ice_var_par_load(ismp%vars(17),filename,var_name="ts")
-        call ice_var_par_load(ismp%vars(18),filename,var_name="tb")
-        call ice_var_par_load(ismp%vars(19),filename,var_name="tau_b")
-        call ice_var_par_load(ismp%vars(20),filename,var_name="calv")
-        call ice_var_par_load(ismp%vars(21),filename,var_name="q_gl")
-        call ice_var_par_load(ismp%vars(22),filename,var_name="f_ice")
-        call ice_var_par_load(ismp%vars(23),filename,var_name="f_grnd")
-        call ice_var_par_load(ismp%vars(24),filename,var_name="f_flt")
-        call ice_var_par_load(ismp%vars(25),filename,var_name="m_ice")
-        call ice_var_par_load(ismp%vars(26),filename,var_name="m_af")
-        call ice_var_par_load(ismp%vars(27),filename,var_name="a_grnd")
-        call ice_var_par_load(ismp%vars(28),filename,var_name="a_flt")
-        call ice_var_par_load(ismp%vars(29),filename,var_name="smb_tot")
-        call ice_var_par_load(ismp%vars(30),filename,var_name="bmb_tot")
-        call ice_var_par_load(ismp%vars(31),filename,var_name="calv_tot")
-        call ice_var_par_load(ismp%vars(32),filename,var_name="q_gl_tot")
-
-if (.TRUE.) then 
-
-        ! === Print summary =========
-
-        write(*,"(a40,a8,a50,a15)") &
-                                "Variable name",    &
-                                "Type",             &
-                                "Standard name",    &
-                                "Unit"
-        
-        do n = 1, n_variables 
-            v = ismp%vars(n)
-            write(*,"(a40,a8,a50,a15)") &
-                                trim(v%long_name),      &
-                                trim(v%var_type),       &
-                                trim(v%standard_name),  &
-                                trim(v%units_out) 
-        end do 
-
-
-end if 
-
-        return 
-
-    end subroutine ismip6_load_ice_var_info
-
-    subroutine ice_var_par_load(ismpv,filename,var_name)
-        ! Load parmaeters associated with a given ice variable
-
-        implicit none 
-
-        type(ismip6_ice_var_class), intent(OUT) :: ismpv 
-        character(len=*),           intent(IN)  :: filename 
-        character(len=*),           intent(IN)  :: var_name
-
-        ! Local variables 
-        character(len=56) :: group 
-
-        group = "ismip6_out_"//trim(var_name)
-
-        call nml_read(filename,group,"name",            ismpv%name)
-        call nml_read(filename,group,"long_name",       ismpv%long_name)
-        call nml_read(filename,group,"var_type",        ismpv%var_type)
-        call nml_read(filename,group,"standard_name",   ismpv%standard_name)
-        call nml_read(filename,group,"units_in",        ismpv%units_in)
-        call nml_read(filename,group,"units_out",       ismpv%units_out)
-        call nml_read(filename,group,"unit_scale",      ismpv%unit_scale)
-        call nml_read(filename,group,"unit_offset",     ismpv%unit_offset)
-
-        return 
-
-    end subroutine ice_var_par_load
-
     subroutine ismip6_write_init(filename,xc,yc,time,lon,lat,area,map_name,lambda,phi)
 
         implicit none 
@@ -492,20 +388,152 @@ end if
     end subroutine ismip6_write_init
 
 
-    subroutine ismip6_write_step(filename,file_nml)
+    subroutine ismip6_write_step(filename,file_nml,time)
 
         implicit none 
 
         character(len=*),   intent(IN) :: filename
         character(len=*),   intent(IN) :: file_nml 
+        real(wp),           intent(IN) :: time 
 
         ! Local variables 
+        integer    :: ncid, n
+        real(wp) :: time_prev 
         type(ismip6_ice_class) :: ismp 
 
-        call ismip6_load_ice_var_info(ismp,file_nml)
+if (.FALSE.) then    
+        ! Open the file for writing
+        call nc_open(filename,ncid,writable=.TRUE.)
 
+        ! Determine current writing time step 
+        n = nc_size(filename,"time",ncid)
+        call nc_read(filename,"time",time_prev,start=[n],count=[1],ncid=ncid) 
+        if (abs(time-time_prev).gt.1e-5) n = n+1 
+
+end if 
+        ! Load up output variable meta information 
+        call ismip6_load_ice_var_info(ismp,file_nml,verbose=.TRUE.)
+
+        ! Proceed to calculating and writing each variable 
+
+        ! Variables to output every five years 
+        if (time - time_prev .ge. 5.0_wp) then 
+            ! Five years have passed, proceed 
+
+
+
+
+        end if 
+
+
+        ! Next, variables that should be output every year 
         return
 
     end subroutine ismip6_write_step
+
+    subroutine ismip6_load_ice_var_info(ismp,filename,verbose)
+
+        implicit none 
+
+        type(ismip6_ice_class), intent(OUT) :: ismp 
+        character(len=*),       intent(IN)  :: filename 
+        logical,                intent(IN)  :: verbose 
+
+        ! Local variables
+        integer :: n  
+        integer, parameter :: n_variables = 32
+
+        type(ismip6_ice_var_class) :: v 
+
+        ! First initialize ismp object to hold variable meta data 
+        if (allocated(ismp%vars)) deallocate(ismp%vars)
+        allocate(ismp%vars(n_variables))
+
+        ! Load individual variables by namelist group 
+        call ice_var_par_load(ismp%vars(1), filename,var_name="H_ice")
+        call ice_var_par_load(ismp%vars(2), filename,var_name="z_srf")
+        call ice_var_par_load(ismp%vars(3), filename,var_name="z_base")
+        call ice_var_par_load(ismp%vars(4), filename,var_name="z_bed")
+        call ice_var_par_load(ismp%vars(5), filename,var_name="q_geo")
+        call ice_var_par_load(ismp%vars(6), filename,var_name="smb")
+        call ice_var_par_load(ismp%vars(7), filename,var_name="bmb")
+        call ice_var_par_load(ismp%vars(8), filename,var_name="dh_dt")
+        call ice_var_par_load(ismp%vars(9), filename,var_name="ux_s")
+        call ice_var_par_load(ismp%vars(10),filename,var_name="uy_s")
+        call ice_var_par_load(ismp%vars(11),filename,var_name="uz_s")
+        call ice_var_par_load(ismp%vars(12),filename,var_name="ux_b")
+        call ice_var_par_load(ismp%vars(13),filename,var_name="uy_b")
+        call ice_var_par_load(ismp%vars(14),filename,var_name="uz_b")
+        call ice_var_par_load(ismp%vars(15),filename,var_name="ux_bar")
+        call ice_var_par_load(ismp%vars(16),filename,var_name="uy_bar")
+        call ice_var_par_load(ismp%vars(17),filename,var_name="ts")
+        call ice_var_par_load(ismp%vars(18),filename,var_name="tb")
+        call ice_var_par_load(ismp%vars(19),filename,var_name="tau_b")
+        call ice_var_par_load(ismp%vars(20),filename,var_name="calv")
+        call ice_var_par_load(ismp%vars(21),filename,var_name="q_gl")
+        call ice_var_par_load(ismp%vars(22),filename,var_name="f_ice")
+        call ice_var_par_load(ismp%vars(23),filename,var_name="f_grnd")
+        call ice_var_par_load(ismp%vars(24),filename,var_name="f_flt")
+        call ice_var_par_load(ismp%vars(25),filename,var_name="m_ice")
+        call ice_var_par_load(ismp%vars(26),filename,var_name="m_af")
+        call ice_var_par_load(ismp%vars(27),filename,var_name="a_grnd")
+        call ice_var_par_load(ismp%vars(28),filename,var_name="a_flt")
+        call ice_var_par_load(ismp%vars(29),filename,var_name="smb_tot")
+        call ice_var_par_load(ismp%vars(30),filename,var_name="bmb_tot")
+        call ice_var_par_load(ismp%vars(31),filename,var_name="calv_tot")
+        call ice_var_par_load(ismp%vars(32),filename,var_name="q_gl_tot")
+
+        if (verbose) then 
+
+            ! === Print summary =========
+
+            write(*,"(a40,a8,a50,a15)") &
+                                    "Variable name",    &
+                                    "Type",             &
+                                    "Standard name",    &
+                                    "Unit"
+            
+            do n = 1, n_variables 
+                v = ismp%vars(n)
+                write(*,"(a40,a8,a50,a15)") &
+                                    trim(v%long_name),      &
+                                    trim(v%var_type),       &
+                                    trim(v%standard_name),  &
+                                    trim(v%units_out) 
+            end do 
+
+
+        end if 
+
+        return 
+
+    end subroutine ismip6_load_ice_var_info
+
+    subroutine ice_var_par_load(ismpv,filename,var_name)
+        ! Load parmaeters associated with a given ice variable
+
+        implicit none 
+
+        type(ismip6_ice_var_class), intent(OUT) :: ismpv 
+        character(len=*),           intent(IN)  :: filename 
+        character(len=*),           intent(IN)  :: var_name
+
+        ! Local variables 
+        character(len=56) :: group 
+
+        group = "ismip6_out_"//trim(var_name)
+
+        call nml_read(filename,group,"name",            ismpv%name)
+        call nml_read(filename,group,"long_name",       ismpv%long_name)
+        call nml_read(filename,group,"var_type",        ismpv%var_type)
+        call nml_read(filename,group,"standard_name",   ismpv%standard_name)
+        call nml_read(filename,group,"units_in",        ismpv%units_in)
+        call nml_read(filename,group,"units_out",       ismpv%units_out)
+        call nml_read(filename,group,"unit_scale",      ismpv%unit_scale)
+        call nml_read(filename,group,"unit_offset",     ismpv%unit_offset)
+
+        return 
+
+    end subroutine ice_var_par_load
 
 end module ismip6
