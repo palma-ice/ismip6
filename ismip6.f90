@@ -3,6 +3,7 @@ module ismip6
     ! of experiments. 
     
     use varslice 
+    use ncio 
 
     implicit none 
 
@@ -313,5 +314,62 @@ contains
         return 
 
     end subroutine ismip6_forcing_update
+
+    ! === ISMIP6 OUTPUT ROUTINES ==========
+
+    subroutine ismip6_write_init(filename,xc,yc,time,lon,lat,area,map_name,lambda,phi)
+
+        implicit none 
+
+        character(len=*),   intent(IN) :: filename
+        real(wp),           intent(IN) :: xc(:)
+        real(wp),           intent(IN) :: yc(:)
+        real(wp),           intent(IN) :: time
+        real(wp),           intent(IN) :: lon(:,:)
+        real(wp),           intent(IN) :: lat(:,:)
+        real(wp),           intent(IN) :: area(:,:)
+        character(len=*),   intent(IN) :: map_name
+        real(wp),           intent(IN) :: lambda
+        real(wp),           intent(IN) :: phi 
+
+        ! Local variables 
+        character(len=12) :: xnm 
+        character(len=12) :: ynm 
+        
+        xnm = "xc"
+        ynm = "yc" 
+
+        ! === Initialize netcdf file and dimensions =========
+
+        ! Create the netcdf file 
+        call nc_create(filename)
+
+        ! Add grid axis variables to netcdf file
+        call nc_write_dim(filename,xnm,x=xc*1e-3,units="kilometers")
+        call nc_write_attr(filename,xnm,"_CoordinateAxisType","GeoX")
+
+        call nc_write_dim(filename,ynm,x=yc*1e-3,units="kilometers")
+        call nc_write_attr(filename,ynm,"_CoordinateAxisType","GeoY")
+        
+        ! Add time axis with current value 
+        call nc_write_dim(filename,"time", x=time,dx=1.0_wp,nx=1,units="years",unlimited=.TRUE.)
+        
+        ! Projection information 
+        call nc_write_map(filename,map_name,dble(lambda),phi=dble(phi))
+
+        ! Lat-lon information
+        call nc_write(filename,"lon2D",lon,dim1=xnm,dim2=ynm,grid_mapping=map_name)
+        call nc_write_attr(filename,"lon2D","_CoordinateAxisType","Lon")
+        call nc_write(filename,"lat2D",lat,dim1=xnm,dim2=ynm,grid_mapping=map_name)
+        call nc_write_attr(filename,"lat2D","_CoordinateAxisType","Lat")
+
+        call nc_write(filename,"area",  area*1e-6,  dim1=xnm,dim2=ynm,grid_mapping=map_name,units="km^2")
+        call nc_write_attr(filename,"area","coordinates","lat2D lon2D")
+        
+
+        return
+
+    end subroutine ismip6_write_init
+
 
 end module ismip6
