@@ -190,7 +190,7 @@ contains
 
         ! Get slices for current time
 
-        slice_method = "exact" 
+        slice_method = "interp" 
 
         ! === Atmospheric fields ==================================
         

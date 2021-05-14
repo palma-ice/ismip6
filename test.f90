@@ -55,6 +55,10 @@ program test
     time_end  = 2110.0 
     dt        = 10.0 
 
+    time_init = 1950.0 
+    time_end  = 1951.0 
+    dt        = 0.5 
+    
     do n = 1, ceiling((time_end-time_init)/dt)+1
 
         ! Get current time 
@@ -62,7 +66,6 @@ program test
 
         ! Update ismip6 forcing to current time
         call ismip6_forcing_update(ismp,time)
-
 
         ! Check data
         write(*,*) "================"
@@ -75,11 +78,9 @@ program test
         call print_var_range(ismp%tf%var, "tf", mv,time) 
         write(*,*) 
 
+        stop 
 
 
-        ! Do ice sheet stuff 
-
-        
     end do
 
     stop "Done testing ismip6 forcing."
