@@ -276,13 +276,13 @@ contains
                             ! Store data in vs%var 
                             vs%var = var 
 
-                        case("interp")
+                        case("interp","extrapolate")
                             ! var should have two time dimensions to interpolate
                             ! between. Allocate vs%var to appropriate size and 
                             ! perform interpolation 
 
                             ! Consistency check 
-                            if (size(time,1) .gt. 1) then 
+                            if (size(time,1) .ne. 1) then 
                                 write(*,*) "varslice_update:: Error: to use slice_method='interp', &
                                 &only one time should be provided as an argument."
                                 write(*,*) "time = ", time 
@@ -301,6 +301,16 @@ contains
                                 stop
                             end if 
                             
+                            ! Note: slice_method='interp' and 'extrapolate' use the same method, since 
+                            ! the indices determine interpolation weights (ie, 
+                            ! for slice_method='interp', if the time of interest lies
+                            ! outside of the bounds of the data, then k0=k1=-1 and 
+                            ! output data are set to missing values) 
+
+                            write(*,*) "To do!"
+                            stop 
+                            
+
                         case("range_mean","range_sd","range_min","range_max","range_sum")
                             ! Allocate vs%var to match desired output size, 
                             ! and calculate output values 
@@ -529,7 +539,7 @@ contains
                     k0 = -1
                     k1 = -1 
                 end if 
-                
+
             ! No default case
         end select 
 

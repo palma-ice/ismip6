@@ -16,7 +16,7 @@
     name        = "pr"
     units_in    = "kg m-2 s-1"
     units_out   = "mm yr-1"
-    unit_scale  = 31536000.0 
+    unit_scale  = 31556926.0        ! ISMIP standard sec_to_year 
     unit_offset = 0.0 
     with_time   = FALSE 
     time_par    = 1995, 1995, 0

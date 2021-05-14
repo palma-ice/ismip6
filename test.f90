@@ -75,6 +75,11 @@ program test
         call print_var_range(ismp%tf%var, "tf", mv,time) 
         write(*,*) 
 
+
+
+        ! Do ice sheet stuff 
+
+        
     end do
 
     stop "Done testing ismip6 forcing."
