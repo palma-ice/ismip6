@@ -58,7 +58,7 @@ program test
     time_init = 1950.0 
     time_end  = 1951.0 
     dt        = 0.5 
-    
+
     do n = 1, ceiling((time_end-time_init)/dt)+1
 
         ! Get current time 
@@ -77,10 +77,7 @@ program test
         call print_var_range(ismp%so%var, "so", mv,time) 
         call print_var_range(ismp%tf%var, "tf", mv,time) 
         write(*,*) 
-
-        stop 
-
-
+        
     end do
 
     stop "Done testing ismip6 forcing."

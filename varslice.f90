@@ -268,10 +268,21 @@ contains
                     ! appropriate size and perform any calculations on the time 
                     ! indices of the local var variable as needed. 
 
+                    ! Handle special case: if only one time is available 
+                    ! for interp/extrapolate methods, then change method 
+                    ! to exact 
+                    if ( (trim(vs%slice_method) .eq. "interp" .or. & 
+                          trim(vs%slice_method) .eq. "extrapolate") .and. &
+                          vs%time(k0) .eq. vs%time(k1)) then 
+                        ! Same time is given for upper and lower bound
+
+                        slice_method = "exact"     
+                    end if 
+
 
                     ! Now, allocate the vs%var variable to the right size 
 
-                    select case(trim(vs%slice_method)) 
+                    select case(trim(slice_method)) 
 
                         case("exact","range")
                             ! Allocate vs%var to the same size as var 
@@ -352,10 +363,6 @@ contains
                                     
                                 case(3)
                                     allocate(vs%var(size(var,1),size(var,2),nt_out,1))
-                                    
-                                    write(*,*) "now" 
-                                    write(*,*) k0, k1 
-                                    write(*,*) size(var,1), size(var,2), size(var,3), size(var,4) 
                                     
                                     do j = 1, size(vs%var,2)
                                     do i = 1, size(vs%var,1)
@@ -595,9 +602,6 @@ contains
                         k1 = k 
                     end do 
 
-                    write(*,*) x_interp, xmin, xmax 
-                    write(*,*) k0, k1, x(k0), x(k1) 
-
                 end if 
 
             case("extrapolate") 
@@ -613,6 +617,24 @@ contains
 
                     k0 = 1
                     k1 = 1 
+
+                else 
+
+                    ! Redo indices to get nearest bracketing points in time_range
+
+                    ! Get lower bound 
+                    k0 = 1 
+                    do k = 1, nk 
+                        if (x(k) .gt. x_interp) exit 
+                        k0 = k 
+                    end do 
+
+                    ! Get upper bound 
+                    k1 = nk 
+                    do k = nk, k0, -1 
+                        if (x(k) .lt. x_interp) exit 
+                        k1 = k 
+                    end do 
 
                 end if 
 
