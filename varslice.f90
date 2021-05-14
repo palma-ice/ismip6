@@ -77,6 +77,7 @@ contains
         type(varslice_param_class) :: par 
         logical  :: with_time 
         real(wp) :: time_range(2) 
+        real(wp) :: time_wt 
         character(len=56) :: slice_method
         character(len=56) :: vec_method 
         integer  :: range_rep 
@@ -275,6 +276,31 @@ contains
                             ! Store data in vs%var 
                             vs%var = var 
 
+                        case("interp")
+                            ! var should have two time dimensions to interpolate
+                            ! between. Allocate vs%var to appropriate size and 
+                            ! perform interpolation 
+
+                            ! Consistency check 
+                            if (size(time,1) .gt. 1) then 
+                                write(*,*) "varslice_update:: Error: to use slice_method='interp', &
+                                &only one time should be provided as an argument."
+                                write(*,*) "time = ", time 
+                                stop 
+                            end if 
+
+                            ! Calculate time weighting between two extremes
+                            time_wt = (time(1)-vs%time(k0)) / (vs%time(k1) - vs%time(k0))
+
+                            if (time_wt .lt. 0.0_wp .or. time_wt .gt. 1.0_wp) then 
+                                write(*,*) "varslice_update:: Error: interpolation weight is incorrect."
+                                write(*,*) "time_wt  = ", time_wt 
+                                write(*,*) "time     = ", time 
+                                write(*,*) "time(k0) = ", vs%time(k0)
+                                write(*,*) "time(k1) = ", vs%time(k1) 
+                                stop
+                            end if 
+                            
                         case("range_mean","range_sd","range_min","range_max","range_sum")
                             ! Allocate vs%var to match desired output size, 
                             ! and calculate output values 
@@ -381,7 +407,7 @@ contains
 
 
                     end select
-                    
+
                 else 
                     ! Dimension range was not found, set variable to missing values 
 
@@ -460,20 +486,50 @@ contains
 
             case("exact") 
 
+                ! If index wasn't found, set idices to -1
                 if (x(k0) .ne. xmin) then 
                     k0 = -1 
                     k1 = -1 
                 end if 
      
+            case("interp") 
 
-            case("range","range_mean","range_sd","range_min","range_max") 
-
-                if ( xmin .ne. xmax .and. &
-                      (k0 .eq. size(x,1) .or. k1 .eq. 1) ) then 
+                ! If xmin/xmax are not found in range, set indices to -1
+                if (minval(x) .gt. xmax .or. maxval(x) .lt. xmin) then 
                     k0 = -1
                     k1 = -1 
                 end if 
 
+            case("extrapolate") 
+
+                ! If xmin/xmax are not found in range, 
+                ! set indices to extreme bound
+                if (minval(x) .gt. xmax) then 
+
+                    k0 = nk
+                    k1 = nk 
+                
+                else if (maxval(x) .lt. xmin) then 
+
+                    k0 = 1
+                    k1 = 1 
+
+                end if 
+
+            case("range","range_mean","range_sd","range_min","range_max") 
+
+                ! ! If xmin/xmax are not found in range, set indices to -1
+                ! if ( xmin .ne. xmax .and. &
+                !       (k0 .eq. size(x,1) .or. k1 .eq. 1) ) then 
+                !     k0 = -1
+                !     k1 = -1 
+                ! end if 
+                ! If xmin/xmax are not found in range, set indices to -1
+                if (minval(x) .gt. xmax .or. maxval(x) .lt. xmin) then 
+                    k0 = -1
+                    k1 = -1 
+                end if 
+                
             ! No default case
         end select 
 
