@@ -178,8 +178,8 @@ contains
                 ! Cases with a time dimension (more complicated)
 
                 if (trim(slice_method) .eq. "interp" .or. &
-                    trim(slice_method) .eq. "extrapolate") then 
-                    ! Update time range for interp/extrapolate methods 
+                    trim(slice_method) .eq. "extrap") then 
+                    ! Update time range for interp/extrap methods 
 
                     ! Time range should cover all available data since 
                     ! bracketing indices to the desired time will be found
@@ -188,7 +188,7 @@ contains
 
                     ! Additional consistency check 
                     if (size(time,1) .ne. 1) then 
-                        write(*,*) "varslice_update:: Error: to use slice_method=['interp','extrapolate'], &
+                        write(*,*) "varslice_update:: Error: to use slice_method=['interp','extrap'], &
                         &only one time should be provided as an argument."
                         write(*,*) "time = ", time 
                         stop 
@@ -269,10 +269,10 @@ contains
                     ! indices of the local var variable as needed. 
 
                     ! Handle special case: if only one time is available 
-                    ! for interp/extrapolate methods, then change method 
+                    ! for interp/extrap methods, then change method 
                     ! to exact 
                     if ( (trim(vs%slice_method) .eq. "interp" .or. & 
-                          trim(vs%slice_method) .eq. "extrapolate") .and. &
+                          trim(vs%slice_method) .eq. "extrap") .and. &
                           vs%time(k0) .eq. vs%time(k1)) then 
                         ! Same time is given for upper and lower bound
 
@@ -305,7 +305,7 @@ contains
                             ! Store data in vs%var 
                             vs%var = var 
 
-                        case("interp","extrapolate")
+                        case("interp","extrap")
                             ! var should have two time dimensions to interpolate
                             ! between. Allocate vs%var to appropriate size and 
                             ! perform interpolation 
@@ -334,7 +334,7 @@ contains
                                 stop
                             end if 
                             
-                            ! Note: slice_method='interp' and 'extrapolate' use the same method, since 
+                            ! Note: slice_method='interp' and 'extrap' use the same method, since 
                             ! the indices determine interpolation weights (ie, 
                             ! for slice_method='interp', if the time of interest lies
                             ! outside of the bounds of the data, then k0=k1=-1 and 
@@ -580,7 +580,7 @@ contains
             case("interp") 
 
                 ! If xmin/xmax are not found in range, set indices to -1
-                if (minval(x) .gt. xmax .or. maxval(x) .lt. xmin) then 
+                if (x_interp .gt. xmax .or. x_interp .lt. xmin) then 
                     k0 = -1
                     k1 = -1 
 
@@ -604,19 +604,19 @@ contains
 
                 end if 
 
-            case("extrapolate") 
+            case("extrap") 
 
                 ! If xmin/xmax are not found in range, 
                 ! set indices to extreme bound
-                if (minval(x) .gt. xmax) then 
-
-                    k0 = nk
-                    k1 = nk 
-                
-                else if (maxval(x) .lt. xmin) then 
+                if (minval(x) .gt. x_interp) then 
 
                     k0 = 1
                     k1 = 1 
+                
+                else if (maxval(x) .lt. x_interp) then 
+
+                    k0 = nk
+                    k1 = nk
 
                 else 
 
@@ -639,13 +639,7 @@ contains
                 end if 
 
             case("range","range_mean","range_sd","range_min","range_max") 
-
-                ! ! If xmin/xmax are not found in range, set indices to -1
-                ! if ( xmin .ne. xmax .and. &
-                !       (k0 .eq. size(x,1) .or. k1 .eq. 1) ) then 
-                !     k0 = -1
-                !     k1 = -1 
-                ! end if 
+                 
                 ! If xmin/xmax are not found in range, set indices to -1
                 if (minval(x) .gt. xmax .or. maxval(x) .lt. xmin) then 
                     k0 = -1

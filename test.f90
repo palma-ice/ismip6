@@ -3,6 +3,7 @@ program test
     use ncio 
 
     use ismip6
+    use varslice 
 
     implicit none 
 
@@ -15,14 +16,23 @@ program test
 
     ! Define default missing value 
     real(wp), parameter :: mv = -9999.0_wp 
-    
-
 
     type(ismip6_forcing_class) :: ismp 
-
+    type(varslice_class)       :: v1 
 
     real(wp) :: time_init, time_end, time, dt
     integer  :: n, k
+
+    ! Testing methods on one varslice variable ==============
+if (.FALSE.) then 
+    call make_test_file("var_test.nc")
+    call varslice_init_nml(v1,"ismip6.nml",group="var1")
+    call varslice_update(v1, [1959.15_wp],method="extrap")
+    call print_var_range(v1%var, "var1", mv) 
+    stop 
+end if 
+    ! =======================================================
+
 
     ! === Testing output writing ===
 
@@ -55,10 +65,6 @@ program test
     time_end  = 2110.0 
     dt        = 10.0 
 
-    time_init = 1950.0 
-    time_end  = 1951.0 
-    dt        = 0.5 
-
     do n = 1, ceiling((time_end-time_init)/dt)+1
 
         ! Get current time 
@@ -77,11 +83,11 @@ program test
         call print_var_range(ismp%so%var, "so", mv,time) 
         call print_var_range(ismp%tf%var, "tf", mv,time) 
         write(*,*) 
-        
+
     end do
 
-    stop "Done testing ismip6 forcing."
-
+    write(*,*) "Done testing ismip6 forcing."
+    write(*,*)
 
 contains
 
@@ -114,6 +120,41 @@ contains
         return 
 
     end subroutine print_var_range
+
+    subroutine make_test_file(filename)
+
+        implicit none 
+
+        character(len=*), intent(IN) :: filename 
+
+        ! Local variables
+        integer :: k, nt  
+        real(wp), allocatable :: var(:,:,:) 
+
+        ! Create the netcdf file 
+        call nc_create(filename)
+
+        ! Add grid axis variables to netcdf file
+        call nc_write_dim(filename,"xc",x=[1,2,3],units="1")
+
+        call nc_write_dim(filename,"yc",x=[2,4,6],units="1")
+        
+        ! Add time axis with current value 
+        call nc_write_dim(filename,"time", x=1950.0_wp,dx=1.0_wp,nx=11,units="years",unlimited=.TRUE.)
+        
+        
+        nt = 11 
+        allocate(var(3,3,nt))
+
+        do k = 1, nt 
+            var(:,:,k) = 1950.0 + real(k-1,wp)
+        end do 
+
+        call nc_write(filename,"var1",var,dim1="xc",dim2="yc",dim3="time")
+
+        return 
+
+    end subroutine make_test_file
 
 
 end program test

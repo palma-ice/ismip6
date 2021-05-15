@@ -1,3 +1,14 @@
+&var1
+    filename    = "var_test.nc"
+    name        = "var1"
+    units_in    = "K"
+    units_out   = "K"
+    unit_scale  = 1.0 
+    unit_offset = 0.0 
+    with_time   = TRUE 
+    time_par    = 1950, 1960, 1
+/
+
 ! ====== ATMOSPHERE ================
 
 &noresm_rcp85_ts_ref
