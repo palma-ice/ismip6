@@ -172,7 +172,7 @@
     name        = "to"
     units_in    = "degrees C"
     units_out   = "K"
-    unit_scale  = 1.0 
+    unit_scale  = 273.15
     unit_offset = 0.0 
     with_time   = True 
     time_par    = 1850, 1994, 1
@@ -205,7 +205,7 @@
     name        = "to"
     units_in    = "degrees C"
     units_out   = "K"
-    unit_scale  = 1.0 
+    unit_scale  = 273.15
     unit_offset = 0.0 
     with_time   = True 
     time_par    = 1995, 2100, 1

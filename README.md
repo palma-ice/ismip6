@@ -38,3 +38,9 @@ That's it. You should see some output to the screen indicating that the program 
 ## To do
   
 - Add additional fields (retreat masks, etc) to ISMIP6 object.
+- Index methods: weighted interpolation between fields (ie snapclim).
+-  random sampling 
+- fluxes are averaged over time 
+- mass conservation quantities: 
+  - calving
+- Ocean spinup 

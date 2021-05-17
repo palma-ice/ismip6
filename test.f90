@@ -27,6 +27,10 @@ program test
 if (.FALSE.) then 
     call make_test_file("var_test.nc")
     call varslice_init_nml(v1,"ismip6.nml",group="var1")
+    call varslice_update(v1, [1959.15_wp],method="exact")
+    call print_var_range(v1%var, "var1", mv) 
+    call varslice_update(v1, [1959.15_wp],method="interp")
+    call print_var_range(v1%var, "var1", mv) 
     call varslice_update(v1, [1959.15_wp],method="extrap")
     call print_var_range(v1%var, "var1", mv) 
     stop 
@@ -83,6 +87,12 @@ end if
         call print_var_range(ismp%so%var, "so", mv,time) 
         call print_var_range(ismp%tf%var, "tf", mv,time) 
         write(*,*) 
+
+        if (time .eq. time_init) then 
+            call make_test_file_2("test.nc",ismp%tf%var(:,:,1,1),time,init=.TRUE.)
+        else 
+            call make_test_file_2("test.nc",ismp%tf%var(:,:,1,1),time,init=.FALSE.)
+        end if 
 
     end do
 
@@ -157,6 +167,52 @@ contains
     end subroutine make_test_file
 
 
+    subroutine make_test_file_2(filename,var,time,init)
+
+        implicit none 
+
+        character(len=*), intent(IN) :: filename 
+        real(wp),         intent(IN) :: var(:,:) 
+        real(wp),         intent(IN) :: time
+        logical,          intent(IN) :: init 
+
+        ! Local variables
+        integer  :: nx, ny, n 
+        real(wp) :: time_prev 
+
+        nx = size(var,1) 
+        ny = size(var,2) 
+
+        if (init) then 
+            ! Create the netcdf file 
+            call nc_create(filename)
+
+            ! Add grid axis variables to netcdf file
+            call nc_write_dim(filename,"xc",x=1,dx=1,nx=nx,units="1")
+            call nc_write_dim(filename,"yc",x=1,dx=1,nx=ny,units="1")
+        
+            ! Add time axis with current value 
+            call nc_write_dim(filename,"time", x=time,dx=1.0_wp,nx=1,units="years",unlimited=.TRUE.)
+        
+        end if  
+
+        ! Determine current writing time step 
+        n = nc_size(filename,"time")
+        call nc_read(filename,"time",time_prev,start=[n],count=[1]) 
+        if (abs(time-time_prev).gt.1e-5) n = n+1 
+
+        ! Update the time step
+        call nc_write(filename,"time",time,dim1="time",start=[n],count=[1])
+
+        ! Write the variable
+        call nc_write(filename,"var",var,dim1="xc",dim2="yc",dim3="time", &
+                                                start=[1,1,n],count=[nx,ny,1])
+
+        return 
+
+    end subroutine make_test_file_2
+
+    
 end program test
 
 

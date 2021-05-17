@@ -288,17 +288,6 @@ contains
 
         ! === Additional calculations ======================
 
-        ! Add reference ocean values to current anomalies 
-
-        do k = 1, size(ism%to%var,3)
-            where(ism%to%var(:,:,k,1) .ne. mv .and. ism%to_ref%var(:,:,k,1) .ne. mv)
-                ism%to%var(:,:,k,1) = ism%to%var(:,:,k,1) + ism%to_ref%var(:,:,k,1)
-            end where 
-            where(ism%so%var(:,:,k,1) .ne. mv .and. ism%so_ref%var(:,:,k,1) .ne. mv)
-                ism%so%var(:,:,k,1) = ism%so%var(:,:,k,1) + ism%so_ref%var(:,:,k,1)
-            end where 
-        end do 
-        
         ! Remove missing values, if possible
         do k = 1, size(ism%to%var,3)
             if (count(ism%to%var(:,:,k,1) .ne. mv) .gt. 0) then
@@ -313,8 +302,13 @@ contains
                     ism%so%var(:,:,k,1) = tmp
                 end where 
             end if
-        end do 
-
+            if (count(ism%tf%var(:,:,k,1) .ne. mv) .gt. 0) then
+                tmp = maxval(ism%tf%var(:,:,k,1),mask=ism%tf%var(:,:,k,1) .ne. mv)
+                where(ism%tf%var(:,:,k,1) .eq. mv) 
+                    ism%tf%var(:,:,k,1) = tmp
+                end where 
+            end if
+        end do
 
         ! Apply oceanic correction factor to each depth level
         do k = 1, size(ism%to%var,3)
