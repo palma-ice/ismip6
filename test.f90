@@ -46,8 +46,7 @@ end if
     ! ======================================================================
 
     ! Initialize variables inside of ismip6 object 
-    call ismip6_forcing_init(ismp,"ismip6.nml","noresm_rcp85", &
-                            domain="Antarctica",grid_name="ANT-32KM")
+    call ismip6_forcing_init(ismp,"ismip6.nml","Antarctica","ANT-32KM","noresm_rcp85")
 
 
     ! Print some information for static variables
