@@ -22,8 +22,9 @@
 
 module ncio
 
-    use netcdf
+    use, intrinsic :: iso_fortran_env, only : input_unit, output_unit, error_unit
     use ieee_arithmetic
+    use netcdf
 
     implicit none
 
@@ -35,7 +36,11 @@ module ncio
     double precision, parameter :: NC_TOL = 1d-7
     double precision, parameter :: NC_LIM = 1d25
 
+    double precision, parameter :: NCIO_TOL_UNDERFLOW = 1d-30 
+
     character(len=NC_STRLEN), parameter :: NC_CHARDIM = "strlen"
+
+    character(len=3), parameter :: GRID_MAPPING_NAME_DEFAULT = "crs" 
 
     type ncvar
         character (len=NC_STRLEN) :: name, long_name, standard_name, units
@@ -49,6 +54,7 @@ module ncio
         logical :: missing_set, FillValue_set
         double precision, allocatable :: dim(:)
         logical :: coord
+        logical :: has_no_dims
     end type
 
     interface nc_write
@@ -122,11 +128,16 @@ module ncio
         module procedure    nc_exists_attr_global, nc_exists_attr_variable
     end interface 
 
+    interface nc_time_index
+        module procedure    nc_time_index_sp, nc_time_index_dp
+    end interface
+
     private
     public :: nc_read, nc_read_attr
     public :: nc_create, nc_write_map, nc_write_dim
     public :: nc_open, nc_close
     public :: nc_write, nc_write_attr, nc_size
+    public :: nc_time_index
 
     public :: nc_dims, nc_ndims
     public :: nc_write_attr_std_dim
@@ -148,21 +159,24 @@ contains
 
         implicit none
 
+        character (len=*), intent(IN) :: filename
+        character (len=*), intent(IN) :: name
+        double precision,  intent(IN) :: dat(:)
+        character (len=*), intent(IN) :: xtype
+        integer,           intent(IN) :: size_in(:)
+        integer,           intent(IN), optional :: ncid
+        character (len=*), intent(IN), optional :: dims(:), dim1, dim2, dim3, dim4, dim5, dim6
+        integer,           intent(IN), optional :: start(:)
+        integer,           intent(IN), optional :: count(:)
+        character (len=*), intent(IN), optional :: long_name, standard_name, grid_mapping, units
+        integer,           intent(IN), optional :: missing_value_int
+        real(4),           intent(IN), optional :: missing_value_float
+        double precision,  intent(IN), optional :: missing_value_double
+        
+        ! Local variables
         type(ncvar) :: v
-
-        double precision :: dat(:)
-        character (len=*), optional :: dims(:), dim1, dim2, dim3, dim4, dim5, dim6
-        integer, optional :: start(:), count(:)
-
-        character (len=*) :: filename, name, xtype
-        character (len=*),   optional :: long_name, standard_name, grid_mapping, units
-        integer,          optional :: missing_value_int
-        real(4),          optional :: missing_value_float
-        double precision, optional :: missing_value_double
-        integer :: size_in(:)
+        double precision, allocatable :: dat_to_write(:)
         integer, allocatable :: size_var(:)
-
-        integer, optional :: ncid
         integer :: nc_id
 
         ! netCDF needed counters, array, and names of dims
@@ -171,9 +185,27 @@ contains
         ! Additional helper variables
         integer :: i, j, k, m, ndims, dimid
         double precision :: actual_range(2)
+        logical :: var_has_no_dims
+
+        ! Check what type of variable we are working with
+        ! Some variables have no dimensional attributes and must be treated specially
+        var_has_no_dims = .TRUE. 
+        if (present(dims) .or. present(dim1)) then
+            var_has_no_dims = .FALSE.
+        end if
+
+        ! Safety check
+        if (var_has_no_dims .and. (size(size_in,1) .gt. 1 .or. size_in(1) .ne. 1) ) then
+            write(0,*) "nc_write:: Error: dimension names must be provided for &
+            &variables that are larger than one scalar value."
+            write(0,*) "Filename: ", trim(filename)
+            write(0,*) "Variable name: ", trim(name)
+            write(0,*) "Size of variable: ", size_in
+            stop "stopped by ncio." 
+        end if
 
         ! Initialize ncvar type
-        call nc_v_init(v,trim(name),xtype=trim(xtype))
+        call nc_v_init(v,trim(name),xtype=trim(xtype),has_no_dims=var_has_no_dims)
 
         ! Add extra var info if available from arguments
         if ( present(long_name) )     v%long_name     = trim(long_name)
@@ -183,22 +215,34 @@ contains
 
         if (present(missing_value_int)) then
             v%missing_set = .TRUE.
+            v%FillValue_set = .TRUE.
             v%missing_value = dble(missing_value_int)
+            v%FillValue = v%missing_value
         else if (present(missing_value_float)) then
             v%missing_set = .TRUE.
+            v%FillValue_set = .TRUE.
             v%missing_value = dble(missing_value_float)
+            v%FillValue = v%missing_value
         else if (present(missing_value_double)) then
             v%missing_set = .TRUE.
+            v%FillValue_set = .TRUE.
             v%missing_value = missing_value_double
+            v%FillValue = v%missing_value
         end if
 
         ! Open the file in write mode from filename or ncid
         call nc_check_open(filename, ncid, nf90_write, nc_id)
-        ! and get attributes if variable already exist
+        
+        ! and get attributes if variable already exists
         call nc_get_att(nc_id,v)
         call nc_check( nf90_inquire(nc_id, unlimitedDimID=RecordDimID) ) ! Get Unlimited dimension ID if any
 
         ! Determine number of dims in file from arguments
+
+        ! First, assume a zero-dimenional/coord variable (so one value with no assigned axes)
+        ndims = 1
+
+        ! Check if dim arguments are provided and set ndims accordingly
         if (present(dims)) then
             ndims = size(dims)
 
@@ -208,7 +252,7 @@ contains
                 write(*,*) "           should be specified - not both. Using `dims`."
             end if
         else
-            ndims = 1
+            if (present(dim1)) ndims = 1
             if (present(dim2)) ndims = 2
             if (present(dim3)) ndims = 3
             if (present(dim4)) ndims = 4
@@ -219,27 +263,36 @@ contains
         ! Allocate dimensions of variable on file
         if (allocated(v%dims)) deallocate(v%dims)
         allocate( v%dims(ndims) )
-        if (present(dims)) then
-            do i = 1, ndims
-                v%dims(i) = trim(dims(i))
-            end do
+
+        if (var_has_no_dims) then
+
+            v%dims(1) = trim(name)
+        
         else
-            do i = 1, ndims
-                select case(i)
-                    case(1)
-                        v%dims(i) = trim(dim1)
-                    case(2)
-                        v%dims(i) = trim(dim2)
-                    case(3)
-                        v%dims(i) = trim(dim3)
-                    case(4)
-                        v%dims(i) = trim(dim4)
-                    case(5)
-                        v%dims(i) = trim(dim5)
-                    case(6)
-                        v%dims(i) = trim(dim6)
-                end select
-            end do
+
+            if (present(dims)) then
+                do i = 1, ndims
+                    v%dims(i) = trim(dims(i))
+                end do
+            else
+                do i = 1, ndims
+                    select case(i)
+                        case(1)
+                            v%dims(i) = trim(dim1)
+                        case(2)
+                            v%dims(i) = trim(dim2)
+                        case(3)
+                            v%dims(i) = trim(dim3)
+                        case(4)
+                            v%dims(i) = trim(dim4)
+                        case(5)
+                            v%dims(i) = trim(dim5)
+                        case(6)
+                            v%dims(i) = trim(dim6)
+                    end select
+                end do
+            end if
+
         end if
 
         ! Initialize the start and count arrays
@@ -247,24 +300,34 @@ contains
         v%start = 1
         if (present(start)) v%start = start
 
-        nvar = 1
-        do i = 1, ndims
-            size_var(i) = nc_size(filename,v%dims(i),ncid=nc_id)
-            nvar = nvar*size_var(i)
-        end do
-
-        ! Initialize count such that the entire input array will be stored in file
-        ! unless count argument is given
-        v%count = 1
-        if (present(count)) then
-            ! Assign argument as count
-            v%count = count
-        else if (size(dat) .eq. nvar) then
-            ! Assign count from size of variable on file
-            v%count = size_var
+        if (var_has_no_dims) then
+        
+            v%start = 1
+            v%count = 1
+            size_var(1) = 1
+        
         else
-            ! Assign count from input dimension size
-            v%count(1:size(size_in)) = size_in
+        
+            nvar = 1
+            do i = 1, ndims
+                size_var(i) = nc_size(filename,v%dims(i),ncid=nc_id)
+                nvar = nvar*size_var(i)
+            end do
+
+            ! Initialize count such that the entire input array will be stored in file
+            ! unless count argument is given
+            v%count = 1
+            if (present(count)) then
+                ! Assign argument as count
+                v%count = count
+            else if (size(dat) .eq. nvar) then
+                ! Assign count from size of variable on file
+                v%count = size_var
+            else
+                ! Assign count from input dimension size
+                v%count(1:size(size_in)) = size_in
+            end if
+        
         end if
 
         ! Reset or initialize the actual range of the variable
@@ -288,16 +351,6 @@ contains
             v%actual_range = [0.d0,0.d0]
         end if
 
-        ! Modify the variable according to scale and offset (if working with real or double data)
-        if (trim(v%xtype) .eq. "NF90_FLOAT" .or. trim(v%xtype) .eq. "NF90_DOUBLE") then
-            if (v%missing_set) then
-                where( dabs(dat-v%missing_value) .gt. NC_TOL ) dat = (dat-v%add_offset)/v%scale_factor
-            else
-                ! Apply the scalar and offset if available
-                dat = (dat-v%add_offset)/v%scale_factor
-            end if
-        end if
-
         ! Make sure count size makes sense
         ncount = 1
         do i = 1, ndims
@@ -314,25 +367,42 @@ contains
             stop "stopped by ncio."
         end if
 
-        do i = 1, ndims
+        ! Maks sure dimensions make sense
+        if (.not. var_has_no_dims) then
+            do i = 1, ndims
 
-            call nc_check( nf90_inq_dimid(nc_id, v%dims(i), dimid) )
+                call nc_check( nf90_inq_dimid(nc_id, v%dims(i), dimid) )
 
-            ! If unlimited dimension, the size does not matter
-            if (dimid .eq. RecordDimID) cycle
+                ! If unlimited dimension, the size does not matter
+                if (dimid .eq. RecordDimID) cycle
 
-            call nc_check( nf90_inquire_dimension(nc_id, dimid, len=size_var(i)) )
+                call nc_check( nf90_inquire_dimension(nc_id, dimid, len=size_var(i)) )
 
-            if (v%count(i) .gt. size_var(i)) then
-                write(0,*)  "ncio:: error: "// &
-                           "count exceeds this dimension length."
-                write(0,*)  trim(filename)//": "//trim(v%name)
-                write(0,*)  "Dimension exceeded: ",trim(v%dims(i)), size_var(i)," < ",v%count(i)
-                write(0,*)  "Are the data values a different shape than the file dimensions?"
-                write(0,*)  "   In that case, specify start+count as arguments."
-                stop "stopped by ncio."
+                if (v%count(i) .gt. size_var(i)) then
+                    write(0,*)  "ncio:: error: "// &
+                            "count exceeds this dimension length."
+                    write(0,*)  trim(filename)//": "//trim(v%name)
+                    write(0,*)  "Dimension exceeded: ",trim(v%dims(i)), size_var(i)," < ",v%count(i)
+                    write(0,*)  "Are the data values a different shape than the file dimensions?"
+                    write(0,*)  "   In that case, specify start+count as arguments."
+                    stop "stopped by ncio."
+                end if
+            end do
+        end if
+
+        ! Prepare the data for writing to file
+        allocate(dat_to_write(size(dat)))
+        dat_to_write = dat
+
+        ! Modify the variable according to scale and offset (if working with real or double data)
+        if (trim(v%xtype) .eq. "NF90_FLOAT" .or. trim(v%xtype) .eq. "NF90_DOUBLE") then
+            if (v%missing_set) then
+                where( dabs(dat-v%missing_value) .gt. NC_TOL ) dat_to_write = (dat-v%add_offset)/v%scale_factor
+            else
+                ! Apply the scalar and offset if available
+                dat_to_write = (dat-v%add_offset)/v%scale_factor
             end if
-        end do
+        end if
 
         ! Define / update the netCDF variable for the data.
         call nc_check( nf90_redef(nc_id) )
@@ -341,7 +411,7 @@ contains
 
         ! Write the data to the netcdf file
         ! Note: NF90 converts dat to proper type (int, real, dble) and shape
-        call nc_check( nf90_put_var(nc_id, v%varid, dat,v%start,v%count) )
+        call nc_check( nf90_put_var(nc_id, v%varid, dat_to_write,v%start,v%count) )
 
         ! Close the file. This causes netCDF to flush all buffers and make
         ! sure your data are really written to disk.
@@ -383,7 +453,7 @@ contains
         integer :: i, status
 
         double precision, parameter :: missing_value_default = -9999.0
-        
+
         ! Open the file.
         call nc_check_open(filename, ncid, nf90_nowrite, nc_id)
 
@@ -433,7 +503,7 @@ contains
               v%count(i) = size_in(i)
             end do
         end if
-
+        
         ! Read the variable data from the file
         ! (NF90 converts dat to proper type (int, real, dble)
         call nc_check( nf90_get_var(nc_id, v%varid, dat, v%start, v%count) )
@@ -442,15 +512,22 @@ contains
         ! associated with the file.
         if (.not. present(ncid)) call nc_check( nf90_close(nc_id) )
 
+
+        ! === SPECIAL CASE: missing_value == NaN ==== 
+
+        ! Replace NaNs with internal missing value to avoid crashes.
+        ! IF NaNs are found, it may mean that the missing value
+        ! in the file is also set to NaN, which this program cannot
+        ! handle. Therefore, we replace all NaN values with the
+        ! default missing value, and then set the missing value. 
+        where ( ieee_is_nan(dat) ) dat = missing_value_default
+        v%missing_value = missing_value_default 
+        v%missing_set   = .TRUE. 
+
+        ! ===========================================
+        
+
         if (v%missing_set) then
-            
-            ! === SPECIAL CASE: missing_value == NaN ==== 
-
-            ! Replace NaNs with internal missing value to avoid crashes
-            where ( ieee_is_nan(dat) ) dat = missing_value_default
-            v%missing_value = missing_value_default 
-
-            ! ===========================================
 
             where( dabs(dat-v%missing_value) .gt. NC_TOL ) dat = dat*v%scale_factor + v%add_offset
 
@@ -468,7 +545,10 @@ contains
               dat = dat*v%scale_factor + v%add_offset
         end if
 
-        ! Also eliminate crazy values (in case they are not handled by missing_value for some reason)
+        ! Finally, eliminate tiny values that may cause underflow errors
+        where ( dabs(dat) .lt. NCIO_TOL_UNDERFLOW ) dat = 0.0d0
+        
+        ! Also eliminate crazy high values (in case they are not handled by missing_value for some reason)
         ! Fill with user-desired missing value
         if (present(missing_value_int)) &
             where( dabs(dat) .ge. NC_LIM ) dat = dble(missing_value_int)
@@ -478,25 +558,6 @@ contains
             where( dabs(dat) .ge. NC_LIM ) dat = dble(missing_value_double)
 
 !         write(*,"(a,a,a)") "ncio:: nc_read:: ",trim(filename)//" : ",trim(v%name)
-
-        ! CONSISTENCY CHECK 
-        n1 = 0
-        do i = 1, size(dat,1)
-            if (ieee_is_nan(dat(i))) then
-                n1 = n1 + 1
-            end if
-        end do
-
-        if (n1 .gt. 0) then
-            write(*,*) "nc4_read_internal_numeric:: Error 1: still NaNs."
-            write(*,*) trim(filename)//": ",trim(name)
-            stop
-        end if
-        if (maxval(abs(dat)) .gt. 1e15) then
-            write(*,*) "nc4_read_intenral_numeric:: Error 2: still NaNs."
-            write(*,*) trim(filename)//": ",trim(name)
-            stop
-        end if
 
         if (present(iostat)) iostat = nf90_noerr
         return
@@ -546,7 +607,7 @@ contains
     !! Purpose    :  Make some default initializations of netcdf dim vars
     !! ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     subroutine nc_v_init(v,name,xtype,ndims_in,long_name,standard_name, &
-                         grid_mapping,units,axis,calendar,coord)
+                         grid_mapping,units,axis,calendar,coord,has_no_dims)
 
         implicit none
 
@@ -558,6 +619,7 @@ contains
         character(len=*), optional :: long_name, standard_name
         character(len=*), optional :: grid_mapping, units, axis, calendar
         logical, optional :: coord
+        logical, optional :: has_no_dims
 
         integer :: i
 
@@ -571,15 +633,16 @@ contains
         v%add_offset    = 0.d0
         v%scale_factor  = 1.d0
         v%actual_range  = (/ 0.d0, 0.d0 /)
-        v%missing_set   = .TRUE.
+        v%missing_set   = .FALSE.
         v%missing_value = -9999d0
         v%FillValue     = v%missing_value
         v%FillValue_set = .FALSE.
 
         v%xtype = "NF90_DOUBLE"
         v%coord = .FALSE.
+        v%has_no_dims = .FALSE.
 
-        v%grid_mapping  = ""
+        v%grid_mapping  = GRID_MAPPING_NAME_DEFAULT
 
         ! If args are present, reassign these variables
         if ( present(long_name) )     v%long_name      = trim(long_name)
@@ -590,6 +653,7 @@ contains
                                       v%calendar       = trim(calendar)
 
         if ( present(coord)) v%coord = coord
+        if ( present(has_no_dims)) v%has_no_dims = has_no_dims
         if ( present(xtype)) v%xtype = trim(xtype)
 
         ! Deallocate all arrays
@@ -850,45 +914,64 @@ contains
 
         integer, parameter :: noerr = NF90_NOERR
 
-        ndims = size(v%dims)
-
         ! Check if variable already exists - if so, gets the varid
         stat = nf90_inq_varid(ncid, trim(v%name), v%varid)
 
         ! Define the variable if it doesn't exist
         if ( stat .ne. noerr ) then
-
-            ! Check if it's a dimension (coordinate) variable or a data variable
-            ! Get the dimension ids for the variable to be defined
-            if ( v%coord ) then
-                ! This is a coordinate variable (ie, a dimension defintion)
-                ! Only one dimid needed (that of current variable)
-                allocate(dimids(1))
-                dimids(1) = v%dimid
-            else
-                ! This is a data variable
-                ! Determine ids of dimensions
-                allocate(dimids(ndims))
-                do i = 1, ndims
-                    call nc_check ( nf90_inq_dimid(ncid, v%dims(i), dimids(i)) )
-                end do
-            end if
-
+            
             ! Define the variable
-            select case(trim(v%xtype))
-                case("NF90_INT")
-                    call nc_check( nf90_def_var(ncid,name=trim(v%name),xtype=NF90_INT,dimids=dimids,varid=v%varid) )
-                case("NF90_FLOAT")
-                    call nc_check( nf90_def_var(ncid,name=trim(v%name),xtype=NF90_FLOAT,dimids=dimids,varid=v%varid) )
-                case("NF90_DOUBLE")
-                    call nc_check( nf90_def_var(ncid,name=trim(v%name),xtype=NF90_DOUBLE,dimids=dimids,varid=v%varid) )
-                case("NF90_CHAR")
-                    call nc_check( nf90_def_var(ncid,name=trim(v%name),xtype=NF90_CHAR,dimids=dimids,varid=v%varid) )
-                case DEFAULT
-                    write(*,*) "nc_put_att:: Error, wrong xtype defined:"//trim(v%xtype)
-                    write(0,*) "stopped by ncio."
-                    stop 9
-            end select
+            if (v%has_no_dims) then
+
+                select case(trim(v%xtype))
+                    case("NF90_INT")
+                        call nc_check( nf90_def_var(ncid,name=trim(v%name),xtype=NF90_INT,varid=v%varid) )
+                    case("NF90_FLOAT")
+                        call nc_check( nf90_def_var(ncid,name=trim(v%name),xtype=NF90_FLOAT,varid=v%varid) )
+                    case("NF90_DOUBLE")
+                        call nc_check( nf90_def_var(ncid,name=trim(v%name),xtype=NF90_DOUBLE,varid=v%varid) )
+                    case("NF90_CHAR")
+                        call nc_check( nf90_def_var(ncid,name=trim(v%name),xtype=NF90_CHAR,varid=v%varid) )
+                    case DEFAULT
+                        write(*,*) "nc_put_att:: Error, wrong xtype defined:"//trim(v%xtype)
+                        write(0,*) "stopped by ncio."
+                        stop 9
+                end select
+
+            else
+
+                ! Check if it's a dimension (coordinate) variable or a data variable
+                ! Get the dimension ids for the variable to be defined
+                if ( v%coord ) then
+                    ! This is a coordinate variable (ie, a dimension defintion)
+                    ! Only one dimid needed (that of current variable)
+                    allocate(dimids(1))
+                    dimids(1) = v%dimid
+                else
+                    ! This is a data variable
+                    ! Determine ids of dimensions
+                    ndims = size(v%dims)
+                    allocate(dimids(ndims))
+                    do i = 1, ndims
+                        call nc_check ( nf90_inq_dimid(ncid, v%dims(i), dimids(i)) )
+                    end do
+                end if
+
+                select case(trim(v%xtype))
+                    case("NF90_INT")
+                        call nc_check( nf90_def_var(ncid,name=trim(v%name),xtype=NF90_INT,dimids=dimids,varid=v%varid) )
+                    case("NF90_FLOAT")
+                        call nc_check( nf90_def_var(ncid,name=trim(v%name),xtype=NF90_FLOAT,dimids=dimids,varid=v%varid) )
+                    case("NF90_DOUBLE")
+                        call nc_check( nf90_def_var(ncid,name=trim(v%name),xtype=NF90_DOUBLE,dimids=dimids,varid=v%varid) )
+                    case("NF90_CHAR")
+                        call nc_check( nf90_def_var(ncid,name=trim(v%name),xtype=NF90_CHAR,dimids=dimids,varid=v%varid) )
+                    case DEFAULT
+                        write(*,*) "nc_put_att:: Error, wrong xtype defined:"//trim(v%xtype)
+                        write(0,*) "stopped by ncio."
+                        stop 9
+                end select
+            end if
 
             if (trim(v%xtype) .ne. "NF90_CHAR") then
 
@@ -911,16 +994,14 @@ contains
                     if (v%FillValue_set) then
                         select case(trim(v%xtype))
                             case("NF90_INT")
-                                call nc_check( nf90_put_att(ncid, v%varid, "FillValue", int(v%FillValue)) )
+                                call nc_check( nf90_put_att(ncid, v%varid, "_FillValue", int(v%FillValue)) )
                             case("NF90_FLOAT")
-                                call nc_check( nf90_put_att(ncid, v%varid, "FillValue", real(v%FillValue)) )
+                                call nc_check( nf90_put_att(ncid, v%varid, "_FillValue", real(v%FillValue)) )
                             case("NF90_DOUBLE")
-                                call nc_check( nf90_put_att(ncid, v%varid, "FillValue", v%FillValue) )
+                                call nc_check( nf90_put_att(ncid, v%varid, "_FillValue", v%FillValue) )
                         end select
                     end if
 
-
-                    ! Check to see if missing value is a missing value and fix it. 
 
             end if
 
@@ -1048,10 +1129,17 @@ contains
                         call nc_get_att_double(ncid,v%varid,"missing_value",v%missing_value,stat)
                         if (stat .eq. noerr) v%missing_set = .TRUE.
 
-                        stat = nc_check_att( nf90_get_att(ncid, v%varid, "FillValue", tmpi) )
+                        stat = nc_check_att( nf90_get_att(ncid, v%varid, "_FillValue", tmpi) )
                         if (stat .eq. noerr) then
                             v%FillValue = dble(tmpi)
                             v%FillValue_set = .TRUE.
+
+                            ! ajr, 2020-08-20 
+                            ! Overwrite missing value with Fillvalue, since missing_value 
+                            ! attribute has been deprecated. 
+                            v%missing_value = v%FillValue 
+                            v%missing_set   = .TRUE. 
+                            
                         end if
 
                     case DEFAULT
@@ -1068,7 +1156,7 @@ contains
                         call nc_get_att_double(ncid,v%varid,"missing_value",v%missing_value,stat)
                         if (stat .eq. noerr) v%missing_set = .TRUE.
 
-                        stat = nc_check_att( nf90_get_att(ncid, v%varid, "FillValue", tmp) )
+                        stat = nc_check_att( nf90_get_att(ncid, v%varid, "_FillValue", tmp) )
                         if (stat .eq. noerr) then
                             v%FillValue = tmp
                             v%FillValue_set = .TRUE.
@@ -1145,6 +1233,78 @@ contains
         return
 
     end function nc_size
+
+    function nc_time_index_sp(filename,nm,time,ncid) result(n)
+        ! For an already open netcdf file, check what is the last
+        ! available time index in the file. If current time is larger,
+        ! then advance time index by 1 to be able to write a new timestep.
+
+        implicit none
+
+        character(len=*), intent(IN) :: filename
+        character(len=*), intent(IN) :: nm
+        real(4),          intent(IN) :: time 
+        integer,          intent(IN) :: ncid 
+        integer :: n 
+
+        ! Local variables
+        double precision :: time_prev
+
+        n = nc_time_index_dp(filename,nm,dble(time),ncid)
+
+        return
+
+    end function nc_time_index_sp
+
+
+    function nc_time_index_dp(filename,nm,time,ncid) result(n)
+        ! For an already open netcdf file,find the index that
+        ! matches the current time to within tolerance.
+        ! If current time is larger than last available time,
+        ! then advance time index by 1 to be able to write a new timestep.
+
+        implicit none
+
+        character(len=*), intent(IN) :: filename
+        character(len=*), intent(IN) :: nm
+        real(8),          intent(IN) :: time 
+        integer,          intent(IN) :: ncid 
+
+        ! Local variables
+        integer :: n, ntot
+        double precision, allocatable :: times(:)
+        logical :: found_index
+
+        ! Determine current maximum time index 
+        ntot = nc_size(filename,nm,ncid)
+        allocate(times(ntot))
+        call nc_read(filename,nm,times,ncid=ncid) 
+
+        found_index = .FALSE.
+        do n = 1, ntot
+            if (dabs(time-times(n)).le.NC_TOL) then
+                found_index = .TRUE.
+                exit
+            end if
+        end do
+
+        if (.not. found_index .and. &
+                dabs(time-times(ntot)).gt.NC_TOL ) then
+            ! If current time is larger than that of the file, 
+            ! then advance index by 1 to be able to write to a new timestep
+            n = ntot + 1
+        else if (.not. found_index) then
+            write(error_unit,*) "nc_time_index:: Error: index for current time not found in file &
+            & (ie, current time does not match any values stored in file)."
+            write(error_unit,*) "filename = ", trim(filename)
+            write(error_unit,*) "nm       = ", trim(nm)
+            write(error_unit,*) "time = ", time
+            write(error_unit,*) "times [in file] = ", times
+        end if
+        
+        return
+
+    end function nc_time_index_dp
 
     ! Return variable shape
     subroutine nc_dims(filename,name,names,dims)
@@ -1452,19 +1612,32 @@ contains
         call nc_check( nf90_close(ncid) )
     end subroutine
 
-    subroutine nc_write_map(filename,name,lambda,phi,alpha,x_e,y_n, ncid)
+    subroutine nc_write_map(filename,grid_mapping_name,lambda,phi,alpha,x_e,y_n, &
+                            is_sphere,semi_major_axis,inverse_flattening,ncid)
         ! CF map conventions can be found here:
         ! http://cfconventions.org/Data/cf-conventions/cf-conventions-1.6/build/cf-conventions.html#appendix-grid-mappings
         
         implicit none
 
-        character(len=*) :: filename, name
-
+        character(len=*), intent(IN) :: filename, grid_mapping_name
+        double precision, intent(IN), optional :: lambda, phi
+        double precision, intent(IN), optional :: alpha, x_e, y_n
+        logical,          intent(IN), optional :: is_sphere 
+        double precision, intent(IN), optional :: semi_major_axis
+        double precision, intent(IN), optional :: inverse_flattening
+        integer,          intent(in), optional :: ncid
+        
+        ! Local variables 
         integer :: nc_id, varid, stat
-        integer, intent(in), optional :: ncid
-        double precision, optional :: lambda, phi, alpha, x_e, y_n
+        character(len=56)  :: crs_name 
+        double precision   :: phi_proj_orig 
 
         integer, parameter :: noerr = NF90_NOERR
+
+        ! Define general name of integer variable to 
+        ! hold coordinate reference system (CRS) information
+        ! Always, use crs by default to be consistent with others.
+        crs_name = "crs" 
 
         ! Open the file, set for redefinition
         call nc_check_open(filename, ncid, nf90_write, nc_id)
@@ -1472,41 +1645,133 @@ contains
 
         ! Check if grid mapping has been defined in this file
         ! (if not, define it according to input arguments)
-        stat = nf90_inq_varid(nc_id, trim(name), varid)
+        stat = nf90_inq_varid(nc_id, trim(crs_name), varid)
 
         if ( stat .ne. noerr ) then
             ! Define the mapping variable as an integer with no dimensions,
             ! and include the grid mapping name
-            call nc_check( nf90_def_var(nc_id, trim(name), NF90_INT, varid) )
-            call nc_check( nf90_put_att(nc_id,varid, "grid_mapping_name", trim(name)) )
-
+            
+            call nc_check( nf90_def_var(nc_id, trim(crs_name), NF90_INT, varid) )
+            
             ! Add grid attributes depending on grid_mapping type
-            select case(trim(name))
+            select case(trim(grid_mapping_name))
 
                 case("stereographic")
+                    ! Including 'oblique_stereographic' 
+
+                    if ( (.not. present(lambda)) .or. &
+                         (.not. present(phi))    .or. &
+                         (.not. present(alpha))  .or. &
+                         (.not. present(x_e))    .or. &
+                         (.not. present(y_n))    ) then 
+
+                        write(*,"(a,a)") "ncio:: nc_write_map:: Error: ", & 
+                            "All grid_mapping arguments must be provided ", &
+                            "(lambda, phi, alpha, x_e, y_n)."
+                        stop 
+
+                    end if 
+
+                    ! Add grid mapping attributes 
+                    call nc_check( nf90_put_att(nc_id,varid, "grid_mapping_name", trim(grid_mapping_name)) )
                     call nc_check( nf90_put_att(nc_id,varid, "longitude_of_projection_origin", lambda) )
                     call nc_check( nf90_put_att(nc_id,varid, "latitude_of_projection_origin", phi) )
-                    if (present(alpha)) &
                     call nc_check( nf90_put_att(nc_id,varid, "angle_of_oblique_tangent", alpha) )
                     call nc_check( nf90_put_att(nc_id,varid, "scale_factor_at_projection_origin", 1.d0) )
                     call nc_check( nf90_put_att(nc_id,varid, "false_easting",  x_e) )
                     call nc_check( nf90_put_att(nc_id,varid, "false_northing", y_n) )
 
                 case("polar_stereographic")
+                    
+                    if ( (.not. present(lambda)) .or. &
+                         (.not. present(phi))    .or. &
+                         (.not. present(x_e))    .or. &
+                         (.not. present(y_n))    ) then 
+
+                        write(*,"(a,a)") "ncio:: nc_write_map:: Error: ", & 
+                            "All grid_mapping arguments must be provided ", &
+                            "(lambda, phi, x_e, y_n)."
+                        stop 
+
+                    end if 
+                    
+                    ! Determine latitude_of_projection_origin, since it must 
+                    ! be either -90 or +90 for a polar_stereographic projection:
+                    if (phi .gt. 0.0d0) then 
+                        phi_proj_orig = 90.0d0 
+                    else 
+                        phi_proj_orig = -90.0d0 
+                    end if 
+
+                    ! Add grid mapping attributes 
+                    call nc_check( nf90_put_att(nc_id,varid, "grid_mapping_name", trim(grid_mapping_name)) )
                     call nc_check( nf90_put_att(nc_id,varid, "straight_vertical_longitude_from_pole", lambda) )
-                    call nc_check( nf90_put_att(nc_id,varid, "latitude_of_projection_origin", phi) )
-                    if (present(alpha)) &
-                    call nc_check( nf90_put_att(nc_id,varid, "angle_of_oblique_tangent", alpha) )
-                    call nc_check( nf90_put_att(nc_id,varid, "scale_factor_at_projection_origin", 1.d0) )
+                    call nc_check( nf90_put_att(nc_id,varid, "latitude_of_projection_origin", phi_proj_orig) )
+                    call nc_check( nf90_put_att(nc_id,varid, "standard_parallel", phi) )
+                    
+                        
                     call nc_check( nf90_put_att(nc_id,varid, "false_easting",  x_e) )
                     call nc_check( nf90_put_att(nc_id,varid, "false_northing", y_n) )
+
+                case("lambert_conformal_conic")
+
+                    call nc_check( nf90_put_att(nc_id,varid, "longitude_of_central_meridian", lambda) )
+                    call nc_check( nf90_put_att(nc_id,varid, "latitude_of_projection_origin", phi) )
+                    if (present(alpha)) &
+                    call nc_check( nf90_put_att(nc_id,varid, "standard_parallel", alpha) )
+                        
+                case("latitude_longitude","latlon","gaussian")
+                    
+                    ! Pass - no grid mapping needed for a latitude_longitude grid
+                    
+                    ! Add grid mapping attributes 
+                    !call nc_check( nf90_put_att(nc_id,varid, "grid_mapping_name", "latitude_longitude") )
+                    ! == No additional parameters needed == 
 
                 case DEFAULT
                     ! Do nothing
 
-            end select
+            end select 
 
-            write(*,"(a,a,a)") "ncio:: nc_write_map:: ",trim(filename)//" : ",trim(name)
+
+            select case(trim(grid_mapping_name))
+
+                case("latitude_longitude","latlon","gaussian")
+
+                    ! Pass - do nothing for latitude_longitude grids 
+
+                case DEFAULT 
+                    ! For other projections, add planet information if available
+
+                    ! Add planet information if desired 
+                    if (present(is_sphere) .and. &
+                        present(semi_major_axis) .and. &
+                        present(inverse_flattening)) then 
+
+                        if (is_sphere) then  
+                            call nc_check( nf90_put_att(nc_id,varid, "semi_major_axis", semi_major_axis) )
+                            call nc_check( nf90_put_att(nc_id,varid, "inverse_flattening", 0.0d0) )
+                        else 
+                            call nc_check( nf90_put_att(nc_id,varid, "semi_major_axis", semi_major_axis) )
+                            call nc_check( nf90_put_att(nc_id,varid, "inverse_flattening", inverse_flattening) )
+                            
+                        end if 
+
+                    else if (present(is_sphere) .or. &
+                             present(semi_major_axis) .or. &
+                             present(inverse_flattening)) then 
+
+                        write(*,*) "ncio:: nc_write_map:: Error: to write planet information, &
+                                    &all three planet parameters must be provided: &
+                                    &is_sphere, semi_major_axis, inverse_flattening. &
+                                    &Try again."
+                                    
+                                    stop
+                    end if
+
+            end select 
+
+            write(*,"(a,a,a)") "ncio:: nc_write_map:: ",trim(filename)//" : ",trim(grid_mapping_name)
 
         end if
 
@@ -1529,7 +1794,6 @@ contains
     !! @param units NetCDF attribute of the units of the variable (optional)
     !! @param axis  NetCDF attribute of the standard axis of the variable (optional)
     !! @param calendar NetCDF attribute of the calendar type to be used for time dimensions (optional)
-
     subroutine nc_write_dim_int_pt(filename,name,x,dx,nx, &
                                      long_name,standard_name,units,axis,calendar,unlimited, ncid)
 
@@ -1757,6 +2021,10 @@ contains
 
         call nc_v_init(v,name=trim(name),xtype=xtype,coord=.TRUE.)
 
+        ! Ensure grid_mapping is set to blank since a dimension cannot 
+        ! have a grid mapping. 
+        v%grid_mapping = "" 
+
         !! Now fill in values of arguments that are present
         if ( present(long_name) )     v%long_name     = trim(long_name)
         if ( present(standard_name) ) v%standard_name = trim(standard_name)
@@ -1772,6 +2040,10 @@ contains
         allocate(v%dim(v%n))
         v%dim = x
 
+        ! Allocate dimension names to length=1 (dimension variable has one dimension)
+        if (allocated(v%dims)) deallocate(v%dims)
+        allocate(v%dims(1))
+        
         ! Get the range from the x values
         v%actual_range = (/ minval(v%dim), maxval(v%dim) /)
         v%add_offset   = 0.d0

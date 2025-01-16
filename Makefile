@@ -9,24 +9,18 @@ libdir = ./
 
 # Command-line options at make call
 debug    ?= 0
-parallel ?= 0 
 
 ## COMPILER CONFIGURATION ##
 # (should be loaded from config directory)
 
 FC = gfortran
 
-INC_NC  = -I/opt/local/include
-LIB_NC  = -L/opt/local/lib -lnetcdff -L/opt/local/lib -Wl,-headerpad_max_install_names -Wl,-syslibroot,/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk -arch x86_64 -lnetcdf -lnetcdf
+NC_CROOT=/opt/homebrew/Cellar/netcdf/4.9.2_2
+NC_FROOT=/opt/homebrew/Cellar/netcdf-fortran/4.6.1_1
+INC_NC  = -I${NC_FROOT}/include
+LIB_NC  = -L${NC_FROOT}/lib -lnetcdff -L${NC_CROOT}/lib -lnetcdf
 
 FFLAGS  = -ffree-line-length-none -I$(objdir) -J$(objdir)
-
-ifeq ($(parallel), 1)
-    # Overwrite default choices with openmp relevant choices 
-
-    FFLAGS  = -I$(objdir) -J$(objdir) -m64 -ffree-line-length-none -fomit-frame-pointer -fopenmp 
-
-endif 
 
 LFLAGS  = $(LIB_NC)
 
@@ -47,7 +41,7 @@ endif
 
 ###############################################
 ##
-## List of yelmox rules and source files
+## List of rules and source files
 ##
 ###############################################
 

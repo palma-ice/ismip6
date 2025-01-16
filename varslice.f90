@@ -1,5 +1,6 @@
 module varslice
 
+    use, intrinsic :: iso_fortran_env, only : input_unit, output_unit, error_unit
     use ncio 
     use nml 
 
@@ -44,32 +45,60 @@ module varslice
         ! Variable information
         real(wp), allocatable :: x(:) 
         real(wp), allocatable :: y(:)
-        real(wp), allocatable :: lev(:)  
+        real(wp), allocatable :: z(:)  
+        real(wp), allocatable :: time(:)
 
-        real(wp), allocatable :: time(:)  
-        real(wp), allocatable :: var(:,:,:,:) 
+        real(wp), allocatable :: var(:,:,:,:)
+                
     end type 
 
     private 
+    public :: varslice_param_class
     public :: varslice_class
     public :: varslice_update
     public :: varslice_init_nml 
     public :: varslice_init_arg
+    public :: varslice_init_data
     public :: varslice_end 
 
 contains
 
     
-    subroutine varslice_update(vs,time,method,rep)
+    subroutine varslice_update(vs,time,method,fill,rep)
         ! Routine to update transient climate forcing to match 
         ! current `time`. 
+
+        ! time = a specific time or a range of times
+
+        ! method = ["exact","range","interp","extrap","range_min","range_mean","range_max"]
+        ! difference time-slicing methods applied to the data read from the file.
+        ! Check routine `get_indices()` to see how data is loaded for each slice_method.
+        ! ["exact","range"] produce data identical to the input file, where
+        ! "exact" loads the data from the file for the time index matching the desired time
+        ! exactly - if it is not available, missing values are returned.
+        ! "range" loads all the data within a certain time range.
+        ! ["interp","extrap"] both return a time slice by interpolating to the
+        ! desired time from the two closest bracketing timesteps available in the file. "extrap"
+        ! allows for setting the time slice equal to the first or last timestep available, if
+        ! the desired time is out of bounds, while "interp" returns missing values in this case. 
+        ! "range_*" methods return one time slice with the method applied to the data within the 
+        ! range given by `time`. 
+
+        ! rep: frequency to apply slice_method over time. If rep=1, then calculation (mean/sd/etc)
+        ! will be applied to each time index, returning a field with no time dimension. 
+        ! If rep=12, then calculation will be applied to every 12th index, resulting in 
+        ! 12 values along dimension.
+
+        ! fill: method to handle missing values. By default, no treatment and missing values
+        ! are included in returned fields. TODO
 
         implicit none 
 
         type(varslice_class),       intent(INOUT) :: vs
-        real(wp),         optional, intent(IN)    :: time(:)    ! [yr] Current time, or time range 
-        character(len=*), optional, intent(IN)    :: method     ! slice_method (only if with_time==True)
-        integer,          optional, intent(IN)    :: rep        ! Only if with_time==True, and slice_method==range_*
+        real(wp),         optional, intent(IN)    :: time(:)        ! [yr] Current time, or time range 
+        character(len=*), optional, intent(IN)    :: method         ! slice_method (only if with_time==True)
+        character(len=*), optional, intent(IN)    :: fill           ! none, min, max, mean (how to fill in missing values)
+        integer,          optional, intent(IN)    :: rep            ! Only if with_time==True, and slice_method==range_*
         
         ! Local variables 
         integer :: k, k0, k1, nt, nt_now, nt_out
@@ -79,6 +108,7 @@ contains
         real(wp) :: time_range(2) 
         real(wp) :: time_wt(2)
         character(len=56) :: slice_method
+        character(len=56) :: fill_method
         character(len=56) :: vec_method 
         integer  :: range_rep 
         integer,  allocatable :: kk(:) 
@@ -110,6 +140,15 @@ contains
         slice_method = "exact"
         if (present(method)) slice_method = trim(method)
 
+        fill_method = "none"
+        if (present(fill)) fill_method = trim(fill) 
+
+        if (trim(fill_method) .ne. "none") then 
+            write(error_unit,*) "Error: varslice: fill methods have not yet been implemented. &
+            &Set fill_method='none' for now."
+            stop
+        end if
+        
         range_rep = 1
         if (present(rep)) range_rep = rep 
 
@@ -789,7 +828,7 @@ contains
         character(len=*),       intent(IN)    :: filename
         character(len=*),       intent(IN)    :: group
         character(len=*),       intent(IN), optional :: domain
-        character(len=*),       intent(IN), optional :: grid_name  
+        character(len=*),       intent(IN), optional :: grid_name
         logical,                intent(IN), optional :: verbose 
         ! Local variables 
         
@@ -945,7 +984,7 @@ contains
                 else 
                     allocate(vs%x(vs%par%dim(1)))
                     allocate(vs%y(vs%par%dim(2)))
-                    allocate(vs%lev(vs%par%dim(3)))
+                    allocate(vs%z(vs%par%dim(3)))
                     allocate(vs%var(vs%par%dim(1),vs%par%dim(2),vs%par%dim(3),1))
 
                     if (nc_exists_var(vs%par%filename,dim_names(1))) then 
@@ -959,9 +998,9 @@ contains
                         call axis_init(vs%y,nx=vs%par%dim(2))
                     end if
                     if (nc_exists_var(vs%par%filename,dim_names(3))) then 
-                        call nc_read(vs%par%filename,dim_names(3),vs%lev)
+                        call nc_read(vs%par%filename,dim_names(3),vs%z)
                     else
-                        call axis_init(vs%lev,nx=vs%par%dim(3))
+                        call axis_init(vs%z,nx=vs%par%dim(3))
                     end if
                     
                 end if
@@ -970,7 +1009,7 @@ contains
                 if (with_time) then 
                     allocate(vs%x(vs%par%dim(1)))
                     allocate(vs%y(vs%par%dim(2)))
-                    allocate(vs%lev(vs%par%dim(3)))
+                    allocate(vs%z(vs%par%dim(3)))
                     allocate(vs%var(vs%par%dim(1),vs%par%dim(2),vs%par%dim(3),1))
 
                     if (nc_exists_var(vs%par%filename,dim_names(1))) then 
@@ -984,9 +1023,9 @@ contains
                         call axis_init(vs%y,nx=vs%par%dim(2))
                     end if
                     if (nc_exists_var(vs%par%filename,dim_names(3))) then 
-                        call nc_read(vs%par%filename,dim_names(3),vs%lev)
+                        call nc_read(vs%par%filename,dim_names(3),vs%z)
                     else
-                        call axis_init(vs%lev,nx=vs%par%dim(3))
+                        call axis_init(vs%z,nx=vs%par%dim(3))
                     end if
                     
                 else 
@@ -1002,7 +1041,25 @@ contains
 
         end select
 
-        return 
+        ! Make sure all axis variables exist
+        if (.not. allocated(vs%x)) then 
+            allocate(vs%x(1))
+            vs%x = 0.0_wp 
+        end if 
+        if (.not. allocated(vs%y)) then 
+            allocate(vs%y(1))
+            vs%y = 0.0_wp 
+        end if 
+        if (.not. allocated(vs%z)) then 
+            allocate(vs%z(1))
+            vs%z = 0.0_wp 
+        end if 
+        if (.not. allocated(vs%time)) then 
+            allocate(vs%time(1))
+            vs%time = 0.0_wp 
+        end if 
+
+        return  
 
     end subroutine varslice_init_data
 
@@ -1016,7 +1073,7 @@ contains
         if (allocated(vs%par%dim))  deallocate(vs%par%dim)
         if (allocated(vs%x))        deallocate(vs%x)
         if (allocated(vs%y))        deallocate(vs%y)
-        if (allocated(vs%lev))      deallocate(vs%lev)
+        if (allocated(vs%z))      deallocate(vs%z)
         if (allocated(vs%time))     deallocate(vs%time)
         if (allocated(vs%var))      deallocate(vs%var)
         
@@ -1024,14 +1081,13 @@ contains
 
     end subroutine varslice_end
 
-    subroutine varslice_par_load(par,filename,group,domain,grid_name,init,verbose)
+    subroutine varslice_par_load(par,filename,group,domain,grid_name,verbose)
 
         type(varslice_param_class), intent(OUT) :: par 
         character(len=*), intent(IN) :: filename
         character(len=*), intent(IN) :: group
         character(len=*), intent(IN), optional :: domain
-        character(len=*), intent(IN), optional :: grid_name  
-        logical, optional :: init 
+        character(len=*), intent(IN), optional :: grid_name   
         logical, optional :: verbose 
 
         ! Local variables
@@ -1040,7 +1096,6 @@ contains
         logical  :: print_summary 
 
         init_pars = .FALSE.
-        if (present(init)) init_pars = .TRUE. 
 
         print_summary = .TRUE. 
         if (present(verbose)) print_summary = verbose 
