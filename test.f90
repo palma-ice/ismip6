@@ -17,6 +17,7 @@ program test
     ! Define default missing value 
     real(wp), parameter :: mv = -9999.0_wp 
 
+    type(ismip6_experiment_class) :: iexp 
     type(ismip6_forcing_class) :: ismp 
     type(varslice_class)       :: v1 
 
@@ -45,10 +46,13 @@ end if
 
     ! ======================================================================
 
+    ! Running Antarctica domain, load Antarctica specific parameters
+    call ismip6_experiment_def(iexp,"ctrlAE","ismip6_ant.nml","UCM","YELMO")
+
     ! Initialize variables inside of ismip6 object 
-    call ismip6_forcing_init(ismp,"ismip6.nml","Antarctica","ANT-32KM","noresm_rcp85")
-
-
+    call ismip6_forcing_init(ismp,"ismip6_ant.nml","Antarctica","ANT-32KM", &
+                                experiment=iexp%experiment,shlf_collapse=iexp%shlf_collapse)
+    
     ! Print some information for static variables
     write(*,*) "================" 
     call print_var_range(ismp%ts_ref%var, "ts_ref", mv) 
